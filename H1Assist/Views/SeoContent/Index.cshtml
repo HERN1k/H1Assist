@@ -1,0 +1,185 @@
+﻿@{
+    ViewData["Title"] = "SEO content";
+}
+<form 
+    method="post"
+    asp-action="Generate"
+    asp-controller="SeoContent"
+    class="ml-auto mr-auto mb-8"
+>
+    <div
+        class="pb-4"
+    >
+        <label for="nameUA" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">Product name (UA)</label>
+        <div class="w-full max-w-sm min-w-[200px]">
+            <input 
+                id="nameUA"
+                name="productNameUA"
+                type="text"
+                class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 
+                       rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 
+                       hover:border-slate-300 shadow-sm focus:shadow" 
+                placeholder="Type here..."
+            />
+        </div>
+    </div>
+
+    <div class="pb-4">
+        <label for="nameRU" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">Product name (RU)</label>
+        <div class="w-full max-w-sm min-w-[200px]">
+            <input id="nameRU"
+                   name="productNameRU"
+                   type="text"
+                   class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200
+                       rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400
+                       hover:border-slate-300 shadow-sm focus:shadow"
+                   placeholder="Type here..." />
+        </div>
+    </div>
+
+    <button type="submit"
+            class="inline-flex justify-center items-center px-4 py-2 bg-purple-500 dark:bg-purple-400 text-white font-semibold rounded-lg
+                   hover:bg-purple-700 transition-colors ml-auto mr-auto cursor-pointer w-fit">
+        Run
+    </button>
+</form>
+
+<div style="@((ViewBag.ContentVisible as bool? ?? false) ? "display:block;" : "display:none;")">
+    <div class="mb-16">
+        <p class="text-2xl text-purple-500 dark:text-purple-400 font-medium mt-4 mb-4 text-center">Ukrainian</p>
+        <div class="mb-4 flex flex-row">
+            <p id="productNameDataUA">
+                <strong>Product name: </strong>
+                <span class="ml-2 w-fit">@(ViewBag.ProductNameUA ?? string.Empty)</span>
+            </p>
+            <button class="px-2 py-1 bg-purple-500 dark:bg-purple-400 text-white rounded-sm text-sm
+                           hover:bg-purple-700 transition-colors ml-4 mt-auto mb-auto cursor-pointer"
+                    onclick="copyText('productNameDataUA')">
+                Copy
+            </button>
+        </div>
+
+        <div class="mb-4 flex flex-row">
+            <p id="headingDataUA">
+                <strong>H1: </strong>
+                <span class="ml-2 w-fit">@(ViewBag.HeadingUA ?? string.Empty)</span>
+            </p>
+            <button class="px-2 py-1 bg-purple-500 dark:bg-purple-400 text-white rounded-sm text-sm
+                           hover:bg-purple-700 transition-colors ml-4 mt-auto mb-auto cursor-pointer"
+                    onclick="copyText('headingDataUA')">
+                Copy
+            </button>
+        </div>
+
+        <div class="mb-4 flex flex-row">
+            <p id="titleDataUA">
+                <strong>Title: </strong>
+                <span class="ml-2 w-fit">@(ViewBag.TitleUA ?? string.Empty)</span>
+            </p>
+            <button class="px-2 py-1 bg-purple-500 dark:bg-purple-400 text-white rounded-sm text-sm
+                           hover:bg-purple-700 transition-colors ml-4 mt-auto mb-auto cursor-pointer"
+                    onclick="copyText('titleDataUA')">
+                Copy
+            </button>
+        </div>
+
+        <div class="mb-4 flex flex-row">
+            <p id="keywordsDataUA">
+                <strong>Keywords: </strong>
+                <span class="ml-2 w-fit">@(ViewBag.KeywordsUA ?? string.Empty)</span>
+            </p>
+            <button class="px-2 py-1 bg-purple-500 dark:bg-purple-400 text-white rounded-sm text-sm
+                           hover:bg-purple-700 transition-colors ml-4 mt-auto mb-auto cursor-pointer"
+                    onclick="copyText('keywordsDataUA')">
+                Copy
+            </button>
+        </div>
+
+        <div class="mb-4 flex flex-row">
+            <p id="descriptionDataUA">
+                <strong>Description: </strong>
+                <span class="ml-2 w-fit">@(ViewBag.DescriptionUA ?? string.Empty)</span>
+            </p>
+            <button class="px-2 py-1 bg-purple-500 dark:bg-purple-400 text-white rounded-sm text-sm
+                           hover:bg-purple-700 transition-colors ml-4 mt-auto mb-auto cursor-pointer"
+                    onclick="copyText('descriptionDataUA')">
+                Copy
+            </button>
+        </div>
+    </div>
+
+    <div>
+        <p class="text-2xl text-purple-500 dark:text-purple-400 font-medium mt-4 mb-4 text-center">Russian</p>
+        <div class="mb-4 flex flex-row">
+            <p id="productNameDataRU">
+                <strong>Product name: </strong>
+                <span class="ml-2 w-fit">@(ViewBag.ProductNameRU ?? string.Empty)</span>
+            </p>
+            <button class="px-2 py-1 bg-purple-500 dark:bg-purple-400 text-white rounded-sm text-sm
+                           hover:bg-purple-700 transition-colors ml-4 mt-auto mb-auto cursor-pointer"
+                    onclick="copyText('productNameDataRU')">
+                Copy
+            </button>
+        </div>
+
+        <div class="mb-4 flex flex-row">
+            <p id="headingDataRU">
+                <strong>H1: </strong>
+                <span class="ml-2 w-fit">@(ViewBag.HeadingRU ?? string.Empty)</span>
+            </p>
+            <button class="px-2 py-1 bg-purple-500 dark:bg-purple-400 text-white rounded-sm text-sm
+                           hover:bg-purple-700 transition-colors ml-4 mt-auto mb-auto cursor-pointer"
+                    onclick="copyText('headingDataRU')">
+                Copy
+            </button>
+        </div>
+
+        <div class="mb-4 flex flex-row">
+            <p id="titleDataRU">
+                <strong>Title: </strong>
+                <span class="ml-2 w-fit">@(ViewBag.TitleRU ?? string.Empty)</span>
+            </p>
+            <button class="px-2 py-1 bg-purple-500 dark:bg-purple-400 text-white rounded-sm text-sm
+                           hover:bg-purple-700 transition-colors ml-4 mt-auto mb-auto cursor-pointer"
+                    onclick="copyText('titleDataRU')">
+                Copy
+            </button>
+        </div>
+
+        <div class="mb-4 flex flex-row">
+            <p id="keywordsDataRU">
+                <strong>Keywords: </strong>
+                <span class="ml-2 w-fit">@(ViewBag.KeywordsRU ?? string.Empty)</span>
+            </p>
+            <button class="px-2 py-1 bg-purple-500 dark:bg-purple-400 text-white rounded-sm text-sm
+                           hover:bg-purple-700 transition-colors ml-4 mt-auto mb-auto cursor-pointer"
+                    onclick="copyText('keywordsDataRU')">
+                Copy
+            </button>
+        </div>
+
+        <div class="mb-4 flex flex-row">
+            <p id="descriptionDataRU">
+                <strong>Description: </strong>
+                <span class="ml-2 w-fit">@(ViewBag.DescriptionRU ?? string.Empty)</span>
+            </p>
+            <button class="px-2 py-1 bg-purple-500 dark:bg-purple-400 text-white rounded-sm text-sm
+                           hover:bg-purple-700 transition-colors ml-4 mt-auto mb-auto cursor-pointer"
+                    onclick="copyText('descriptionDataRU')">
+                Copy
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyText(id) {
+        const lines = document.getElementById(id)?.innerText?.split(":");
+        if (lines.length >= 2) {
+            const text = lines[1]?.trim();
+            if (text !== undefined && text !== null) {
+                navigator.clipboard.writeText(text).catch(err => console.error(err));
+            }
+        }
+    }
+</script>

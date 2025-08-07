@@ -1,0 +1,10 @@
+{
+    "dependencies": {
+        "@tailwindcss/cli": "^4.1.11",
+        "tailwindcss": "^4.1.11"
+    },
+    "scripts": {
+        "css:release": "tailwindcss -i ./wwwroot/css/site.css -o ./wwwroot/css/tailwind.css --minify",
+        "css:debug": "tailwindcss -i ./wwwroot/css/site.css -o ./wwwroot/css/tailwind.css --watch"
+    }
+}

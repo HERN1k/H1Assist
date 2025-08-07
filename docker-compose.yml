@@ -1,0 +1,6 @@
+services:
+  h1assist:
+    image: ${DOCKER_REGISTRY-}h1assist
+    build:
+      context: .
+      dockerfile: H1Assist/Dockerfile

@@ -1,0 +1,35 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 px-4">
+    <h1 class="text-4xl font-bold text-red-600 dark:text-red-400 mb-4">Error</h1>
+    <h2 class="text-xl mb-4 text-center">An error occurred while processing your request.</h2>
+
+    @if (Model.ShowRequestId)
+    {
+        <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+            <strong class="font-medium">Request ID:</strong>
+            <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs">@Model.RequestId</code>
+        </p>
+    }
+
+    <div class="bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-300 p-4 mb-6 max-w-xl rounded">
+        <h3 class="font-semibold text-lg mb-1">Development Mode</h3>
+        <p class="text-sm">
+            Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
+        </p>
+        <p class="mt-2 text-sm">
+            <strong class="font-semibold">The Development environment shouldn't be enabled for deployed applications.</strong><br />
+            It can result in displaying sensitive information from exceptions to end users.
+            For local debugging, enable the <strong>Development</strong> environment by setting the
+            <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">ASPNETCORE_ENVIRONMENT</code>
+            environment variable to <strong>Development</strong> and restarting the app.
+        </p>
+    </div>
+
+    <a href="/" class="inline-block bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition">
+        Back to Home
+    </a>
+</div>

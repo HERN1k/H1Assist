@@ -1,0 +1,49 @@
+﻿@{
+    ViewData["Title"] = "Image editor";
+}
+<form 
+    method="post"
+    enctype="multipart/form-data"
+    asp-action="ConvertImageFormat"
+    asp-controller="ImageEditor" 
+    class="max-w-md mx-auto pt-6 pl-6 pr-6 pb-2 bg-white dark:bg-gray-900 shadow-md rounded-lg space-y-4"
+>
+    <div>
+        <label for="file" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Choose image</label>
+        <input id="file"
+               name="uploadFiles" 
+               type="file"
+               multiple
+               class="block w-full text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 border border-gray-300 
+                      dark:border-gray-700 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500" 
+        />
+    </div>
+
+    <div>
+        <label for="extension" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Choose extension</label>
+        <select id="extension"
+            name="selectedExtension" 
+        >
+            @foreach (var item in (List<SelectListItem>)ViewBag.Options)
+            {
+                <option value="@item.Value">@item.Text</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit"
+            class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg 
+                   hover:bg-blue-700 transition-colors cursor-pointer">
+        Run
+    </button>
+</form>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="text-rose-400 mt-4">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}

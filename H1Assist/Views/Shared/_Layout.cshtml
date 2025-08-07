@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] | H1Assist</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/css/tailwind.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/H1Assist.styles.css" asp-append-version="true" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" asp-append-version="true">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin asp-append-version="true">
+    <link href="https://fonts.googleapis.com/css2?family=Mozilla+Text:wght@200..700&display=swap" rel="stylesheet" asp-append-version="true">
+</head>
+<body class="min-h-screen flex flex-col font-mozilla">
+    <header class="bg-white dark:bg-gray-800 shadow">
+        <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a class="text-xl font-bold text-gray-700 dark:text-gray-200" asp-area="" asp-controller="Home" asp-action="Index">H1Assist</a>
+            <button class="" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class=""></span>
+            </button>
+            <div class="flex items-center gap-4">
+                <a class="text-gray-700 dark:text-gray-200 hover:underline" asp-area="" asp-controller="ImageEditor" asp-action="Index">Image editor</a>
+                <a class="text-gray-700 dark:text-gray-200 hover:underline" asp-area="" asp-controller="SeoContent" asp-action="Index">Seo content</a>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main" class="flex-grow container mx-auto px-4 py-8">
+        @RenderBody()
+    </main>
+
+    <footer class="bg-gray-100 dark:bg-gray-800 text-center py-4 text-sm text-gray-500 dark:text-gray-400">
+        <div class="">
+            &copy; 2025 - H1Assist - <a asp-area="" asp-controller="Home" asp-action="Privacy" class="hover:underline">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
