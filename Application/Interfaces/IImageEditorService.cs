@@ -5,6 +5,6 @@ namespace Application.Interfaces
 {
     public interface IImageEditorService
     {
-        Task<byte[]> ConvertImageFormatAsync(ImageExtension outputExtension, params IFormFile[] images);
+        Task<byte[]> ConvertImageFormatAsync(ImageExtension outputExtension, int selectedWidth, params IFormFile[] images);
     }
 }

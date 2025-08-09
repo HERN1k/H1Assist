@@ -1,0 +1,29 @@
+﻿@using H1Assist.ViewComponents
+@model ButtonViewComponentProps
+
+@if (string.IsNullOrEmpty(@Model.WrapperClasses))
+{
+    <button type="@Model.Type"
+            onclick="@Model.OnClick"
+            class="inline-flex items-center justify-center border align-middle select-none font-medium text-center
+                   transition-all duration-150 ease-in disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed
+                   data-[shape=pill]:rounded-full data-[width=full]:w-full focus:shadow-none text-sm rounded-sm shadow-sm cursor-pointer
+                   hover:shadow-md bg-slate-800 border-slate-800 text-slate-50 hover:bg-slate-700 hover:border-slate-700 transform active:scale-95
+                   mt-auto mb-auto @Model.SizeClasses @Model.MoreClasses">
+        @Model.Text
+    </button>
+}
+else
+{
+    <div class="@Model.WrapperClasses">
+        <button type="@Model.Type"
+                onclick="@Model.OnClick"
+                class="inline-flex items-center justify-center border align-middle select-none font-medium text-center
+                       transition-all duration-150 ease-in disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed
+                       data-[shape=pill]:rounded-full data-[width=full]:w-full focus:shadow-none text-sm rounded-sm shadow-sm cursor-pointer
+                       hover:shadow-md bg-slate-800 border-slate-800 text-slate-50 hover:bg-slate-700 hover:border-slate-700 transform active:scale-95
+                       mt-auto mb-auto @Model.SizeClasses @Model.MoreClasses">
+            @Model.Text
+        </button>
+    </div>
+}

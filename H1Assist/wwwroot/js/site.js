@@ -1,16 +1,8 @@
-﻿const buttonsActionMap = new Map();
-
-function init() {
-    for (const [key, value] of buttonsActionMap) {
-        document.getElementById(key)?.addEventListener("click", value);
-    } 
-}
-
-function cleanup() {
-    for (const [key, value] of buttonsActionMap) {
-        document.getElementById(key)?.removeEventListener("click", value);
+﻿class CopyToClipboard {
+    static fromElementById(id) {
+        const text = document.getElementById(id)?.innerText;
+        if (text !== undefined && text !== null) {
+            navigator.clipboard.writeText(text).catch(err => console.error(err));
+        }
     }
-} 
-
-document.addEventListener("DOMContentLoaded", init);
-window.addEventListener("beforeunload", cleanup);
+}

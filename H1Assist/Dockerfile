@@ -20,10 +20,10 @@ COPY ["H1Assist/H1Assist.csproj", "H1Assist/"]
 RUN dotnet restore "./H1Assist/H1Assist.csproj"
 COPY . .
 WORKDIR "/src/H1Assist"
-COPY H1Assist/package.json H1Assist/package-lock.json ./
-RUN apt-get update && apt-get install -y nodejs npm
-RUN npm install
-RUN if [ "$BUILD_CONFIGURATION" = "Release" ]; then npm run css:release; fi
+#COPY H1Assist/package.json H1Assist/package-lock.json ./
+#RUN apt-get update && apt-get install -y nodejs npm
+#RUN npm install
+#RUN if [ "$BUILD_CONFIGURATION" = "Release" ]; then npm run css:release; fi
 RUN dotnet build "./H1Assist.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Этот этап используется для публикации проекта службы, который будет скопирован на последний этап

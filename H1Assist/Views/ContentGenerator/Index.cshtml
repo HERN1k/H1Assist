@@ -1,0 +1,128 @@
+﻿@model ContentGeneratorViewModel
+@{
+    ViewData["Title"] = "Content generator";
+}
+<h2 class="font-bold leading-snug tracking-normal text-slate-800 mx-auto mt-4 mb-8 w-full text-2xl lg:max-w-3xl lg:text-4xl text-center">
+    Content generator
+</h2>
+
+<form 
+    method="post"
+    asp-action="Generate"
+    asp-controller="ContentGenerator"
+    class="ml-auto mr-auto mb-8 flex flex-row gap-4 items-center justify-center"
+>
+    <div>
+        <label for="nameUA" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">Product name (UA)</label>
+        <div class="w-full max-w-sm min-w-[200px]">
+            <input 
+                id="nameUA"
+                name="productNameUA"
+                type="text"
+                class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 
+                       rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 
+                       hover:border-slate-300 shadow-sm focus:shadow" 
+                placeholder="Type here..."
+            />
+        </div>
+    </div>
+
+    <div>
+        <label for="nameRU" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">Product name (RU)</label>
+        <div class="w-full max-w-sm min-w-[200px]">
+            <input id="nameRU"
+                   name="productNameRU"
+                   type="text"
+                   class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200
+                          rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400
+                          hover:border-slate-300 shadow-sm focus:shadow"
+                   placeholder="Type here..." />
+        </div>
+    </div>
+
+    @await Component.InvokeAsync("Button", new { text = "Generate", type = "submit", wrapperClasses = "mt-auto" })
+</form>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="text-rose-400 mt-4">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}
+
+<div style="@((Model.ContentVisible as bool? ?? false) ? "display:block;" : "display:none;")">
+    <div class="relative flex flex-row items-center justify-center mb-10">
+        <div class="relative w-6 lg:w-9 flex-none">
+            <h2 class="absolute left-[-200%] top-1/2 -translate-y-1/2 w-max origin-center -rotate-90 font-bold leading-snug tracking-normal text-slate-800 text-2xl lg:text-4xl text-center">
+                Ukrainian
+            </h2>
+        </div>
+        <div class="border border-slate-300 rounded-sm p-2 shadow-sm">
+            @await Component.InvokeAsync("ContentTextItem", new {
+                id = "productNameDataUA",
+                headline = "Product name:",
+                text = Model.ProductNameUA
+            })
+            @await Component.InvokeAsync("ContentTextItem", new {
+                id = "headingDataUA",
+                headline = "H1:",
+                text = Model.HeadingUA
+            })
+            @await Component.InvokeAsync("ContentTextItem", new {
+                id = "titleDataUA",
+                headline = "Title:",
+                text = Model.TitleUA
+            })
+            @await Component.InvokeAsync("ContentTextItem", new {
+                id = "keywordsDataUA",
+                headline = "Keywords:",
+                text = Model.KeywordsUA
+            })
+            @await Component.InvokeAsync("ContentTextItem", new {
+                id = "descriptionDataUA",
+                headline = "Description:",
+                text = Model.DescriptionUA,
+                marginBottom = "mb-0",
+            })
+        </div>
+    </div>
+
+    <div class="relative flex flex-row items-center justify-center">
+        <div class="relative w-6 lg:w-9 flex-none">
+            <h2 class="absolute left-[-160%] top-1/2 -translate-y-1/2 w-max origin-center -rotate-90 font-bold leading-snug tracking-normal text-slate-800 text-2xl lg:text-4xl text-center">
+                Russian
+            </h2>
+        </div>
+        <div class="border border-slate-300 rounded-sm p-2 shadow-sm">
+            @await Component.InvokeAsync("ContentTextItem", new {
+                id = "productNameDataRU",
+                headline = "Product name: ",
+                text = Model.ProductNameRU
+            })
+            @await Component.InvokeAsync("ContentTextItem", new {
+                id = "headingDataRU",
+                headline = "H1: ",
+                text = Model.HeadingRU
+            })
+            @await Component.InvokeAsync("ContentTextItem", new {
+                id = "titleDataRU",
+                headline = "Title: ",
+                text = Model.TitleRU
+            })
+            @await Component.InvokeAsync("ContentTextItem", new {
+                id = "keywordsDataRU",
+                headline = "Keywords: ",
+                text = Model.KeywordsRU
+            })
+            @await Component.InvokeAsync("ContentTextItem", new {
+                id = "descriptionDataRU",
+                headline = "Description: ",
+                text = Model.DescriptionRU,
+                marginBottom = "mb-0",
+            })
+        </div>
+    </div>
+</div>

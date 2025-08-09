@@ -1,41 +1,115 @@
-﻿@{
+﻿@model ImageEditorViewModel
+@{
     ViewData["Title"] = "Image editor";
 }
+<h2 class="font-bold leading-snug tracking-normal text-slate-800 mx-auto mt-4 mb-8 w-full text-2xl lg:max-w-3xl lg:text-4xl text-center">
+    Image editor
+</h2>
+
 <form 
     method="post"
     enctype="multipart/form-data"
     asp-action="ConvertImageFormat"
-    asp-controller="ImageEditor" 
-    class="max-w-md mx-auto pt-6 pl-6 pr-6 pb-2 bg-white dark:bg-gray-900 shadow-md rounded-lg space-y-4"
+    asp-controller="ImageEditor"
 >
-    <div>
-        <label for="file" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Choose image</label>
-        <input id="file"
-               name="uploadFiles" 
-               type="file"
-               multiple
-               class="block w-full text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 border border-gray-300 
-                      dark:border-gray-700 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500" 
-        />
-    </div>
-
-    <div>
-        <label for="extension" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Choose extension</label>
-        <select id="extension"
-            name="selectedExtension" 
+    <div class="w-full mb-5">
+        <label 
+            id="dropzone"
+            for="dropzone-file" 
+            class="flex flex-col items-center justify-center py-9 w-full border border-gray-300 border-dashed rounded-2xl cursor-pointer bg-gray-50"
         >
-            @foreach (var item in (List<SelectListItem>)ViewBag.Options)
-            {
-                <option value="@item.Value">@item.Text</option>
-            }
-        </select>
+            <div class="mb-3 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 40 40" fill="none">
+                    <g>
+                        <path id="icon" d="M16.296 25.3935L19.9997 21.6667L23.7034 25.3935M19.9997 35V21.759M10.7404 27.3611H9.855C6.253 27.3611 3.33301 24.4411 3.33301 20.8391C3.33301 17.2371 6.253 14.3171 9.855 14.3171V14.3171C10.344 14.3171 10.736 13.9195 10.7816 13.4326C11.2243 8.70174 15.1824 5 19.9997 5C25.1134 5 29.2589 9.1714 29.2589 14.3171H30.1444C33.7463 14.3171 36.6663 17.2371 36.6663 20.8391C36.6663 24.4411 33.7463 27.3611 30.1444 27.3611H29.2589" stroke="#4F46E5" stroke-width="1.6" stroke-linecap="round" />
+                    </g>
+                </svg>
+            </div>
+            <h2 class="text-center text-gray-400 text-sm font-normal leading-4 mb-2">@Model.ValidExtensions, smaller than 50MB</h2>
+            <h4 id="dropzone-text" class="text-center text-gray-900 text-base font-medium leading-snug">Click here and choose files</h4>
+        </label>
+        <input id="dropzone-file" name="uploadFiles" type="file" uploadFiles multiple class="hidden" />
     </div>
 
-    <button type="submit"
-            class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg 
-                   hover:bg-blue-700 transition-colors cursor-pointer">
-        Run
-    </button>
+    <div class="w-full max-w-sm min-w-[200px] ml-auto mr-auto mb-5">
+        <label for="extension" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Choose extension</label>
+        <div class="relative">
+            <select 
+                id="extension"
+                name="selectedExtension"
+                class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded pl-3 
+                       pr-8 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-400 shadow-sm 
+                       focus:shadow-md appearance-none cursor-pointer"
+            >
+                @if (Model.ValidExtensionsOptions != null)
+                {
+                    @foreach (var item in Model.ValidExtensionsOptions)
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                }
+            </select>
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke-width="1.2" 
+                stroke="currentColor" 
+                class="h-5 w-5 ml-1 absolute top-2.5 right-2.5 text-slate-700">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+            </svg>
+        </div>
+    </div>
+
+    <div class="w-full max-w-sm min-w-[200px] ml-auto mr-auto mb-8">
+        <label for="width" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Choose width</label>
+        <div class="relative">
+            <button id="decreaseButton"
+                    class="absolute right-9 top-1 rounded bg-slate-800 p-1.5 border border-transparent text-center text-sm text-white 
+                           transition-all shadow-sm hover:shadow focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 
+                           active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none cursor-pointer"
+                    type="button">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 16 16"
+                     fill="currentColor"
+                     class="w-4 h-4">
+                    <path d="M3.75 7.25a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Z" />
+                </svg>
+            </button>
+            <input id="width"
+                   type="number"
+                   name="selectedWidth"
+                   value="1000"
+                   step="5"
+                   min="0"
+                   pattern="\d+"
+                   inputmode="numeric"
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/(\..*)/, '')"
+                   class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md pl-3 
+                          pr-20 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm 
+                          focus:shadow appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+            />
+            <button id="increaseButton"
+                    class="absolute right-1 top-1 rounded bg-slate-800 p-1.5 border border-transparent text-center text-sm text-white 
+                           transition-all shadow-sm hover:shadow focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 
+                           active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none cursor-pointer"
+                    type="button">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 16 16"
+                     fill="currentColor"
+                     class="w-4 h-4">
+                    <path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    @await Component.InvokeAsync("Button", new {
+        text = "Convert",
+        type = "submit",
+        sizeClasses = "py-2 px-12",
+        wrapperClasses = "flex flex-row items-center justify-center"
+    })
 </form>
 
 @if (!ViewData.ModelState.IsValid)
@@ -47,3 +121,30 @@
         }
     </div>
 }
+
+<script>
+    const widthInput = document.getElementById("width");
+    const increaseButton = document.getElementById("increaseButton");
+    const decreaseButton = document.getElementById("decreaseButton");
+
+    increaseButton.addEventListener("click", () => {
+        widthInput.value = parseInt(widthInput.value) + 5;
+    });
+
+    decreaseButton.addEventListener("click", () => {
+        widthInput.value = Math.max(100, parseInt(widthInput.value) - 5);
+    });
+
+    const fileInput = document.getElementById("dropzone-file");
+    const dropzoneText = document.getElementById("dropzone-text");
+
+    fileInput.addEventListener("change", () => {
+        if (fileInput.files.length === 0) {
+            dropzoneText.textContent = "Click here and choose files";
+        } else if (fileInput.files.length === 1) {
+            dropzoneText.textContent = "1 file selected";
+        } else {
+            dropzoneText.textContent = `Files selected: ${fileInput.files.length}`;
+        }
+    });
+</script>

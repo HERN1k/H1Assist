@@ -16,7 +16,7 @@ namespace Application.Services
             this._logger = logger ?? throw new ArgumentNullException(nameof(logger));   
         }
 
-        public async Task<byte[]> ConvertImageFormatAsync(ImageExtension outputExtension, params IFormFile[] images)
+        public async Task<byte[]> ConvertImageFormatAsync(ImageExtension outputExtension, int selectedWidth, params IFormFile[] images)
         {
             if (images.Length <= 0)
             {
@@ -46,6 +46,7 @@ namespace Application.Services
                 {
                     await FfmpegConvertImageFormatAsync(
                         fileName: file.FileName,
+                        width: selectedWidth,
                         inputDir: inputDir,
                         outputDir: outputDir,
                         outputExtension: outputExtension
@@ -69,7 +70,7 @@ namespace Application.Services
             }
         }
 
-        private async Task FfmpegConvertImageFormatAsync(string fileName, string inputDir, string outputDir, ImageExtension outputExtension)
+        private async Task FfmpegConvertImageFormatAsync(string fileName, int width, string inputDir, string outputDir, ImageExtension outputExtension)
         {
             if (string.IsNullOrWhiteSpace(fileName) || !fileName.Contains('.'))
                 throw new ArgumentException("Invalid file name.", nameof(fileName));
@@ -83,12 +84,17 @@ namespace Application.Services
             if (!outputExtension.HasValue)
                 throw new ArgumentException("Output extension must be specified.", nameof(outputExtension));
 
+            if (width < 100)
+            {
+                width = 100;
+            }
+
             string inputPath = Path.Combine(inputDir, fileName);
             string outputPath = Path.Combine(outputDir, Path.GetFileNameWithoutExtension(fileName)) + outputExtension;
 
             var psi = new ProcessStartInfo(
                 fileName: "ffmpeg",
-                arguments: $"-i \"{inputPath}\" \"{outputPath}\"")
+                arguments: $"-i \"{inputPath}\" -vf scale={width}:-1 \"{outputPath}\"")
             {
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,

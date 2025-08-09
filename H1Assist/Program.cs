@@ -1,5 +1,6 @@
 using Application;
 using Infrastructure;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace H1Assist
 {
@@ -14,6 +15,13 @@ namespace H1Assist
             builder.Services.AddApplication();
             builder.Services.AddInfrastructure();
 
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
+
             var app = builder.Build();
 
             if (!app.Environment.IsDevelopment())
@@ -22,6 +30,8 @@ namespace H1Assist
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            app.UseForwardedHeaders();
 
             app.UseHttpsRedirection();
             app.UseRouting();
