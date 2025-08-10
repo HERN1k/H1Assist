@@ -1,16 +1,28 @@
+using System.Globalization;
+
 using Application;
+
 using Infrastructure;
+
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc.Razor;
 
 namespace H1Assist
 {
     public class Program
     {
+        public static readonly string[] SupportedCultures = new[] { "en", "uk" };
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllersWithViews()
+                .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
+                .AddDataAnnotationsLocalization();
+
+            builder.Services.AddLocalization(options => options.ResourcesPath = "Localization");
 
             builder.Services.AddApplication();
             builder.Services.AddInfrastructure();
@@ -27,9 +39,19 @@ namespace H1Assist
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            var requestLocalizationOptions = new RequestLocalizationOptions
+            {
+                DefaultRequestCulture = new RequestCulture("en"),
+                SupportedCultures = SupportedCultures.Select(c => new CultureInfo(c)).ToList(),
+                SupportedUICultures = SupportedCultures.Select(c => new CultureInfo(c)).ToList()
+            };
+
+            requestLocalizationOptions.RequestCultureProviders.Insert(0, new CookieRequestCultureProvider());
+
+            app.UseRequestLocalization(requestLocalizationOptions);
 
             app.UseForwardedHeaders();
 

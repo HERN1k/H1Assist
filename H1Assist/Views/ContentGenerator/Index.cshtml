@@ -1,9 +1,13 @@
-﻿@model ContentGeneratorViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization;
+@inject IViewLocalizer Localizer
+@model ContentGeneratorViewModel
 @{
-    ViewData["Title"] = "Content generator";
+    ViewData["Title"] = @Localizer["PAGE_TITLE_CONTENT_GENERATOR_KEY"].Value;
 }
-<h2 class="font-bold leading-snug tracking-normal text-slate-800 mx-auto mt-4 mb-8 w-full text-2xl lg:max-w-3xl lg:text-4xl text-center">
-    Content generator
+
+<h2 class="font-bold leading-snug tracking-normal text-slate-800 dark:text-slate-100 mx-auto mt-4 mb-8 w-full text-2xl lg:max-w-3xl 
+           lg:text-4xl text-center">
+    @Localizer["PAGE_TITLE_CONTENT_GENERATOR_KEY"]
 </h2>
 
 <form 
@@ -13,7 +17,7 @@
     class="ml-auto mr-auto mb-8 flex flex-row gap-4 items-center justify-center"
 >
     <div>
-        <label for="nameUA" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">Product name (UA)</label>
+        <label for="nameUA" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">@Localizer["PRODUCT_NAME_UA_KEY"]</label>
         <div class="w-full max-w-sm min-w-[200px]">
             <input 
                 id="nameUA"
@@ -21,26 +25,29 @@
                 type="text"
                 class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 
                        rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 
-                       hover:border-slate-300 shadow-sm focus:shadow" 
-                placeholder="Type here..."
-            />
+                       hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow"
+                   placeholder="@Localizer["TYPE_HERE_KEY"]" />
         </div>
     </div>
 
     <div>
-        <label for="nameRU" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">Product name (RU)</label>
+        <label for="nameRU" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">@Localizer["PRODUCT_NAME_RU_KEY"]</label>
         <div class="w-full max-w-sm min-w-[200px]">
             <input id="nameRU"
                    name="productNameRU"
                    type="text"
                    class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200
                           rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400
-                          hover:border-slate-300 shadow-sm focus:shadow"
-                   placeholder="Type here..." />
+                          hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow"
+                   placeholder="@Localizer["TYPE_HERE_KEY"]" />
         </div>
     </div>
 
-    @await Component.InvokeAsync("Button", new { text = "Generate", type = "submit", wrapperClasses = "mt-auto" })
+    @await Component.InvokeAsync("Button", new {
+        text = @Localizer["GANERATE_KEY"].Value,
+        type = "submit",
+        wrapperClasses = "mt-auto"
+    })
 </form>
 
 @if (!ViewData.ModelState.IsValid)
@@ -56,34 +63,35 @@
 <div style="@((Model.ContentVisible as bool? ?? false) ? "display:block;" : "display:none;")">
     <div class="relative flex flex-row items-center justify-center mb-10">
         <div class="relative w-6 lg:w-9 flex-none">
-            <h2 class="absolute left-[-200%] top-1/2 -translate-y-1/2 w-max origin-center -rotate-90 font-bold leading-snug tracking-normal text-slate-800 text-2xl lg:text-4xl text-center">
+            <h2 class="absolute left-[-200%] top-1/2 -translate-y-1/2 w-max origin-center -rotate-90 font-bold leading-snug 
+                       tracking-normal text-slate-800 dark:text-slate-100 text-2xl lg:text-4xl text-center">
                 Ukrainian
             </h2>
         </div>
-        <div class="border border-slate-300 rounded-sm p-2 shadow-sm">
+        <div class="border border-slate-300 dark:border-slate-600 rounded-sm p-2 shadow-sm">
             @await Component.InvokeAsync("ContentTextItem", new {
                 id = "productNameDataUA",
-                headline = "Product name:",
+                headline = @Localizer["PRODUCT_NAME_KEY"].Value,
                 text = Model.ProductNameUA
             })
             @await Component.InvokeAsync("ContentTextItem", new {
                 id = "headingDataUA",
-                headline = "H1:",
+                headline = @Localizer["H_ONE_KEY"].Value,
                 text = Model.HeadingUA
             })
             @await Component.InvokeAsync("ContentTextItem", new {
                 id = "titleDataUA",
-                headline = "Title:",
+                headline = @Localizer["TITLE_KEY"].Value,
                 text = Model.TitleUA
             })
             @await Component.InvokeAsync("ContentTextItem", new {
                 id = "keywordsDataUA",
-                headline = "Keywords:",
+                headline = @Localizer["KEYWORDS_KEY"].Value,
                 text = Model.KeywordsUA
             })
             @await Component.InvokeAsync("ContentTextItem", new {
                 id = "descriptionDataUA",
-                headline = "Description:",
+                headline = @Localizer["DESCRIPTION_KEY"].Value,
                 text = Model.DescriptionUA,
                 marginBottom = "mb-0",
             })
@@ -92,34 +100,35 @@
 
     <div class="relative flex flex-row items-center justify-center">
         <div class="relative w-6 lg:w-9 flex-none">
-            <h2 class="absolute left-[-160%] top-1/2 -translate-y-1/2 w-max origin-center -rotate-90 font-bold leading-snug tracking-normal text-slate-800 text-2xl lg:text-4xl text-center">
+            <h2 class="absolute left-[-160%] top-1/2 -translate-y-1/2 w-max origin-center -rotate-90 font-bold leading-snug 
+                       tracking-normal text-slate-800 dark:text-slate-100 text-2xl lg:text-4xl text-center">
                 Russian
             </h2>
         </div>
-        <div class="border border-slate-300 rounded-sm p-2 shadow-sm">
+        <div class="border border-slate-300 dark:border-slate-600 rounded-sm p-2 shadow-sm">
             @await Component.InvokeAsync("ContentTextItem", new {
                 id = "productNameDataRU",
-                headline = "Product name: ",
+                headline = @Localizer["PRODUCT_NAME_KEY"].Value,
                 text = Model.ProductNameRU
             })
             @await Component.InvokeAsync("ContentTextItem", new {
                 id = "headingDataRU",
-                headline = "H1: ",
+                headline = @Localizer["H_ONE_KEY"].Value,
                 text = Model.HeadingRU
             })
             @await Component.InvokeAsync("ContentTextItem", new {
                 id = "titleDataRU",
-                headline = "Title: ",
+                headline = @Localizer["TITLE_KEY"].Value,
                 text = Model.TitleRU
             })
             @await Component.InvokeAsync("ContentTextItem", new {
                 id = "keywordsDataRU",
-                headline = "Keywords: ",
+                headline = @Localizer["KEYWORDS_KEY"].Value,
                 text = Model.KeywordsRU
             })
             @await Component.InvokeAsync("ContentTextItem", new {
                 id = "descriptionDataRU",
-                headline = "Description: ",
+                headline = @Localizer["DESCRIPTION_KEY"].Value,
                 text = Model.DescriptionRU,
                 marginBottom = "mb-0",
             })

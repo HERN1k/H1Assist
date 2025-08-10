@@ -1,9 +1,13 @@
-﻿@model ImageEditorViewModel
+﻿@using Microsoft.AspNetCore.Mvc.Localization;
+@inject IViewLocalizer Localizer
+@model ImageEditorViewModel
 @{
-    ViewData["Title"] = "Image editor";
+    ViewData["Title"] = @Localizer["PAGE_TITLE_IMAGE_EDITOR_KEY"].Value;
 }
-<h2 class="font-bold leading-snug tracking-normal text-slate-800 mx-auto mt-4 mb-8 w-full text-2xl lg:max-w-3xl lg:text-4xl text-center">
-    Image editor
+
+<h2 class="font-bold leading-snug tracking-normal text-slate-800 dark:text-slate-100 mx-auto mt-4 mb-8 
+           w-full text-2xl lg:max-w-3xl lg:text-4xl text-center">
+    @Localizer["IMAGE_EDITOR_KEY"]
 </h2>
 
 <form 
@@ -15,31 +19,32 @@
     <div class="w-full mb-5">
         <label 
             id="dropzone"
-            for="dropzone-file" 
-            class="flex flex-col items-center justify-center py-9 w-full border border-gray-300 border-dashed rounded-2xl cursor-pointer bg-gray-50"
+            for="dropzone-file"
+               class="flex flex-col items-center justify-center py-9 w-full border border-gray-300 dark:border-slate-700 border-dashed
+                      rounded-2xl cursor-pointer bg-gray-50 dark:bg-slate-900"
         >
-            <div class="mb-3 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 40 40" fill="none">
+            <div class="mb-3 flex items-center justify-center text-gray-900 dark:text-slate-50">
+                <svg xmlns="http://www.w3.org/2000/svg" stroke="currentColor" width="50" height="50" viewBox="0 0 40 40" fill="none">
                     <g>
-                        <path id="icon" d="M16.296 25.3935L19.9997 21.6667L23.7034 25.3935M19.9997 35V21.759M10.7404 27.3611H9.855C6.253 27.3611 3.33301 24.4411 3.33301 20.8391C3.33301 17.2371 6.253 14.3171 9.855 14.3171V14.3171C10.344 14.3171 10.736 13.9195 10.7816 13.4326C11.2243 8.70174 15.1824 5 19.9997 5C25.1134 5 29.2589 9.1714 29.2589 14.3171H30.1444C33.7463 14.3171 36.6663 17.2371 36.6663 20.8391C36.6663 24.4411 33.7463 27.3611 30.1444 27.3611H29.2589" stroke="#4F46E5" stroke-width="1.6" stroke-linecap="round" />
+                        <path id="icon" stroke-width="1.6" stroke-linecap="round" d="M16.296 25.3935L19.9997 21.6667L23.7034 25.3935M19.9997 35V21.759M10.7404 27.3611H9.855C6.253 27.3611 3.33301 24.4411 3.33301 20.8391C3.33301 17.2371 6.253 14.3171 9.855 14.3171V14.3171C10.344 14.3171 10.736 13.9195 10.7816 13.4326C11.2243 8.70174 15.1824 5 19.9997 5C25.1134 5 29.2589 9.1714 29.2589 14.3171H30.1444C33.7463 14.3171 36.6663 17.2371 36.6663 20.8391C36.6663 24.4411 33.7463 27.3611 30.1444 27.3611H29.2589" />
                     </g>
                 </svg>
             </div>
-            <h2 class="text-center text-gray-400 text-sm font-normal leading-4 mb-2">@Model.ValidExtensions, smaller than 50MB</h2>
-            <h4 id="dropzone-text" class="text-center text-gray-900 text-base font-medium leading-snug">Click here and choose files</h4>
+            <h2 class="text-center text-gray-400 dark:text-gray-600 text-sm font-normal leading-4 mb-2">@Model.ValidExtensions, @Localizer["SMALLER_THAN_50_MB_KEY"]</h2>
+            <h4 id="dropzone-text" class="text-center text-gray-900 dark:text-gray-100 text-base font-medium leading-snug">@Localizer["CLICK_HERE_AND_CHOOSE_FILES_KEY"]</h4>
         </label>
         <input id="dropzone-file" name="uploadFiles" type="file" uploadFiles multiple class="hidden" />
     </div>
 
     <div class="w-full max-w-sm min-w-[200px] ml-auto mr-auto mb-5">
-        <label for="extension" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Choose extension</label>
+        <label for="extension" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">@Localizer["CHOOSE_EXTENSION_KEY"]</label>
         <div class="relative">
             <select 
                 id="extension"
                 name="selectedExtension"
-                class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded pl-3 
-                       pr-8 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-400 shadow-sm 
-                       focus:shadow-md appearance-none cursor-pointer"
+                    class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 dark:text-slate-300 text-sm border border-slate-200 
+                           dark:border-slate-700 rounded pl-3 pr-8 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-400 shadow-sm
+                           focus:shadow-md appearance-none cursor-pointer"
             >
                 @if (Model.ValidExtensionsOptions != null)
                 {
@@ -62,7 +67,7 @@
     </div>
 
     <div class="w-full max-w-sm min-w-[200px] ml-auto mr-auto mb-8">
-        <label for="width" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Choose width</label>
+        <label for="width" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">@Localizer["CHOOSE_WIDTH_KEY"]</label>
         <div class="relative">
             <button id="decreaseButton"
                     class="absolute right-9 top-1 rounded bg-slate-800 p-1.5 border border-transparent text-center text-sm text-white 
@@ -86,6 +91,7 @@
                    inputmode="numeric"
                    oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/(\..*)/, '')"
                    class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md pl-3 
+                          dark:border-slate-700 dark:text-slate-300
                           pr-20 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm 
                           focus:shadow appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
             />
@@ -105,7 +111,7 @@
     </div>
 
     @await Component.InvokeAsync("Button", new {
-        text = "Convert",
+        text = @Localizer["CONVERT_KEY"].Value,
         type = "submit",
         sizeClasses = "py-2 px-12",
         wrapperClasses = "flex flex-row items-center justify-center"
@@ -123,6 +129,10 @@
 }
 
 <script>
+    const clickHereText = @Html.Raw(Json.Serialize(Localizer["CLICK_HERE_AND_CHOOSE_FILES_KEY"].Value));
+    const oneFileText = @Html.Raw(Json.Serialize(Localizer["ONE_FILE_SELECTED_KEY"].Value));
+    const filesSelectedText = @Html.Raw(Json.Serialize(Localizer["FILES_SELECTED_KEY"].Value));
+
     const widthInput = document.getElementById("width");
     const increaseButton = document.getElementById("increaseButton");
     const decreaseButton = document.getElementById("decreaseButton");
@@ -140,11 +150,11 @@
 
     fileInput.addEventListener("change", () => {
         if (fileInput.files.length === 0) {
-            dropzoneText.textContent = "Click here and choose files";
+            dropzoneText.textContent = clickHereText;
         } else if (fileInput.files.length === 1) {
-            dropzoneText.textContent = "1 file selected";
+            dropzoneText.textContent = oneFileText;
         } else {
-            dropzoneText.textContent = `Files selected: ${fileInput.files.length}`;
+            dropzoneText.textContent = filesSelectedText + ' ' + fileInput.files.length;
         }
     });
 </script>

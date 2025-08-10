@@ -2,23 +2,24 @@
 using Domain.ValueObjects;
 using H1Assist.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Localization;
 
 namespace H1Assist.Controllers
 {
     public class ContentGeneratorController : Controller
     {
         private readonly ISeoGeneratorService _seoGenerator;
+        private readonly IHtmlLocalizer<SharedResource> _localizer;
 
-        public ContentGeneratorController(ISeoGeneratorService seoGenerator)
+        public ContentGeneratorController(ISeoGeneratorService seoGenerator, IHtmlLocalizer<SharedResource> localizer)
         {
             this._seoGenerator = seoGenerator ?? throw new ArgumentNullException(nameof(seoGenerator));
+            this._localizer = localizer ?? throw new ArgumentNullException(nameof(localizer));
         }
 
         [HttpGet]
         public IActionResult Index()
         {
-            ViewBag.ContentVisible = false;
-
             return View(CreateModel());
         }
 
@@ -28,13 +29,13 @@ namespace H1Assist.Controllers
         {
             if (!ModelState.IsValid)
             {
-                ModelState.AddModelError(string.Empty, "Invalid input data.");
+                ModelState.AddModelError(string.Empty, _localizer["INVALID_INPUT_DATA_KEY"].Value);
                 return View("Index");
             }
 
             if (string.IsNullOrWhiteSpace(productNameUA) && string.IsNullOrWhiteSpace(productNameRU))
             {
-                ModelState.AddModelError(string.Empty, "Please provide at least one product name.");
+                ModelState.AddModelError(string.Empty, _localizer["PLEASE_PROVIDE_AT_LEAST_ONE_PRODUCT_NAME_KEY"].Value);
                 return View("Index");
             }
 

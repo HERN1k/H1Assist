@@ -1,12 +1,29 @@
-﻿@{
-    ViewData["Title"] = "Home";
+﻿@using Microsoft.AspNetCore.Mvc.Localization;
+@using Microsoft.AspNetCore.Localization;
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["PAGE_TITLE_HOME_KEY"].Value;
+    string currentCulture = Context.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture.Name ?? string.Empty;
 }
 
-<h1 class="text-3xl font-bold mb-4">Welcome</h1>
+<h1 class="text-3xl font-bold mb-4">@Localizer["WELCOME_KEY"]</h1>
 <p class="text-lg">
-    This is 
-    <a href="https://www.linkedin.com/in/hern1k" class="text-purple-500 dark:text-purple-400 hover:underline font-medium"
-        target="_blank" rel="noopener noreferrer">
-        HERN1k's
-    </a> personal assistant.
+    @if (!currentCulture.StartsWith("en", StringComparison.InvariantCultureIgnoreCase))
+    {
+        @Localizer["THIS_IS_KEY"]
+        @Localizer["PERSONAL_ASSISTANT_KEY"]
+        <a href="https://www.linkedin.com/in/hern1k" class="text-purple-500 dark:text-purple-400 hover:underline font-medium"
+           target="_blank" rel="noopener noreferrer">
+            @Localizer["FOUNDER_NICKNAME_KEY"]
+        </a>
+    }
+    else
+    {
+        @Localizer["THIS_IS_KEY"]
+        <a href="https://www.linkedin.com/in/hern1k" class="text-purple-500 dark:text-purple-400 hover:underline font-medium"
+           target="_blank" rel="noopener noreferrer">
+            @Localizer["FOUNDER_NICKNAME_KEY"]
+        </a>
+        @Localizer["PERSONAL_ASSISTANT_KEY"]
+    }
 </p>

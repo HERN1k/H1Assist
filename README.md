@@ -2,7 +2,9 @@
 
 ☑️ \*\*DDD pattern implementation\*\*
 
-▪️ \*\*Localization support (en, ua)\*\*
+☑️ \*\*Localization support (en, ua)\*\*
 
-▪️ \*\*Dark/light theme (changes when changing device theme)\*\*
+☑️ \*\*Dark/light theme (changes when changing device theme)\*\*
+
+▪️
 
