@@ -1,9 +1,6 @@
 using System.Globalization;
-
 using Application;
-
 using Infrastructure;
-
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
@@ -24,8 +21,12 @@ namespace H1Assist
 
             builder.Services.AddLocalization(options => options.ResourcesPath = "Localization");
 
+            builder.Services.AddMemoryCache();
+
             builder.Services.AddApplication();
             builder.Services.AddInfrastructure();
+
+            builder.Services.AddHttpClient("E-Katalog");
 
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
             {

@@ -1,4 +1,6 @@
-﻿namespace H1Assist.Models
+﻿using Domain.ValueObjects;
+
+namespace H1Assist.Models
 {
     public sealed class ContentGeneratorViewModel
     {
@@ -13,5 +15,6 @@
         public string TitleRU { get; set; } = string.Empty;
         public string KeywordsRU { get; set; } = string.Empty;
         public string DescriptionRU { get; set; } = string.Empty;
+        public List<ProductCharacteristic> Characteristics { get; set; } = new List<ProductCharacteristic>();
     }
 }

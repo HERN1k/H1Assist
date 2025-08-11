@@ -3,6 +3,7 @@
 @model ContentGeneratorViewModel
 @{
     ViewData["Title"] = @Localizer["PAGE_TITLE_CONTENT_GENERATOR_KEY"].Value;
+    var index = 0;
 }
 
 <h2 class="font-bold leading-snug tracking-normal text-slate-800 dark:text-slate-100 mx-auto mt-4 mb-8 w-full text-2xl lg:max-w-3xl 
@@ -25,7 +26,7 @@
                 type="text"
                 class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 
                        rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 
-                       hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow"
+                       hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow font-montserrat"
                    placeholder="@Localizer["TYPE_HERE_KEY"]" />
         </div>
     </div>
@@ -38,7 +39,7 @@
                    type="text"
                    class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200
                           rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400
-                          hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow"
+                          hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow font-montserrat"
                    placeholder="@Localizer["TYPE_HERE_KEY"]" />
         </div>
     </div>
@@ -65,7 +66,7 @@
         <div class="relative w-6 lg:w-9 flex-none">
             <h2 class="absolute left-[-200%] top-1/2 -translate-y-1/2 w-max origin-center -rotate-90 font-bold leading-snug 
                        tracking-normal text-slate-800 dark:text-slate-100 text-2xl lg:text-4xl text-center">
-                Ukrainian
+                @Localizer["UKRAINIAN_KEY"]
             </h2>
         </div>
         <div class="border border-slate-300 dark:border-slate-600 rounded-sm p-2 shadow-sm">
@@ -98,11 +99,11 @@
         </div>
     </div>
 
-    <div class="relative flex flex-row items-center justify-center">
+    <div class="relative flex flex-row items-center justify-center mb-10">
         <div class="relative w-6 lg:w-9 flex-none">
             <h2 class="absolute left-[-160%] top-1/2 -translate-y-1/2 w-max origin-center -rotate-90 font-bold leading-snug 
                        tracking-normal text-slate-800 dark:text-slate-100 text-2xl lg:text-4xl text-center">
-                Russian
+                @Localizer["RUSSIAN_KEY"]
             </h2>
         </div>
         <div class="border border-slate-300 dark:border-slate-600 rounded-sm p-2 shadow-sm">
@@ -132,6 +133,31 @@
                 text = Model.DescriptionRU,
                 marginBottom = "mb-0",
             })
+        </div>
+    </div>
+
+    <div class="relative flex flex-col items-center justify-center">
+        <h2 class="font-bold leading-snug tracking-normal text-slate-800 dark:text-slate-100 text-2xl lg:text-4xl text-center">
+            @Localizer["CHARACTERISTICS_KEY"]
+        </h2>
+
+        <div class="border border-slate-300 dark:border-slate-600 rounded-sm p-2 shadow-sm w-[80%]">
+            <ul>
+                @foreach (var item in @Model.Characteristics)
+                {
+                    var rowClass = index % 2 == 0 ? "bg-neutral-50 dark:bg-neutral-900" : string.Empty;
+
+                    <li class="flex flex-row items-center rounded-sm border border-slate-400 dark:border-slate-700
+                               overflow-hidden font-montserrat p-2 mb-2 @rowClass"
+                    >
+                        <p class="block flex-2"><strong>@item.Name: </strong></p>
+                        <div class="h-full border-r-1 border-slate-800"></div>
+                        <p class="block flex-3">@Html.Raw(@item.Value)</p>
+                    </li>
+
+                    index++;
+                }
+            </ul>
         </div>
     </div>
 </div>

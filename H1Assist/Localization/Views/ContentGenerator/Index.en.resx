@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="CHARACTERISTICS_KEY" xml:space="preserve">
+    <value>Characteristics</value>
+  </data>
   <data name="DESCRIPTION_KEY" xml:space="preserve">
     <value>Description:</value>
   </data>
@@ -141,10 +144,16 @@
   <data name="PRODUCT_NAME_UA_KEY" xml:space="preserve">
     <value>Product name (UA)</value>
   </data>
+  <data name="RUSSIAN_KEY" xml:space="preserve">
+    <value>Russian</value>
+  </data>
   <data name="TITLE_KEY" xml:space="preserve">
     <value>Title:</value>
   </data>
   <data name="TYPE_HERE_KEY" xml:space="preserve">
     <value>Type here...</value>
+  </data>
+  <data name="UKRAINIAN_KEY" xml:space="preserve">
+    <value>Ukrainian</value>
   </data>
 </root>

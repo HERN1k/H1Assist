@@ -10,11 +10,17 @@ namespace H1Assist.Controllers
     {
         private readonly ISeoGeneratorService _seoGenerator;
         private readonly IHtmlLocalizer<SharedResource> _localizer;
+        private readonly IDescriptionService _description;
 
-        public ContentGeneratorController(ISeoGeneratorService seoGenerator, IHtmlLocalizer<SharedResource> localizer)
+        public ContentGeneratorController(
+            ISeoGeneratorService seoGenerator, 
+            IHtmlLocalizer<SharedResource> localizer,
+            IDescriptionService description
+        )
         {
             this._seoGenerator = seoGenerator ?? throw new ArgumentNullException(nameof(seoGenerator));
             this._localizer = localizer ?? throw new ArgumentNullException(nameof(localizer));
+            this._description = description ?? throw new ArgumentNullException(nameof(description));
         }
 
         [HttpGet]
@@ -25,7 +31,7 @@ namespace H1Assist.Controllers
 
         [HttpPost]
         [ActionName("Generate")]
-        public IActionResult GenerateSeoContent(string productNameUA, string productNameRU)
+        public async Task<IActionResult> GenerateSeoContent(string productNameUA, string productNameRU)
         {
             if (!ModelState.IsValid)
             {
@@ -39,26 +45,38 @@ namespace H1Assist.Controllers
                 return View("Index");
             }
 
-            productNameUA = productNameUA.Trim();
-            productNameRU = productNameRU.Trim();
+            try
+            {
+                productNameUA = productNameUA.Trim();
+                productNameRU = productNameRU.Trim();
 
-            ContentGeneratorViewModel model = CreateModel();
+                ContentGeneratorViewModel model = CreateModel();
 
-            model.ContentVisible = true;
+                model.ContentVisible = true;
 
-            model.ProductNameUA = productNameUA;
-            model.HeadingUA = _seoGenerator.GenerateHeading(productNameUA);
-            model.TitleUA = _seoGenerator.GenerateTitle(productNameUA);
-            model.KeywordsUA = _seoGenerator.GenerateKeywords(productNameUA);
-            model.DescriptionUA = _seoGenerator.GenerateDescription(productNameUA);
+                model.ProductNameUA = productNameUA;
+                model.HeadingUA = _seoGenerator.GenerateHeading(productNameUA);
+                model.TitleUA = _seoGenerator.GenerateTitle(productNameUA);
+                model.KeywordsUA = _seoGenerator.GenerateKeywords(productNameUA);
+                model.DescriptionUA = _seoGenerator.GenerateDescription(productNameUA);
 
-            model.ProductNameRU = productNameRU;
-            model.HeadingRU = _seoGenerator.GenerateHeading(productNameRU, Language.RU);
-            model.TitleRU = _seoGenerator.GenerateTitle(productNameRU, Language.RU);
-            model.KeywordsRU = _seoGenerator.GenerateKeywords(productNameRU, Language.RU);
-            model.DescriptionRU = _seoGenerator.GenerateDescription(productNameRU, Language.RU);
+                model.ProductNameRU = productNameRU;
+                model.HeadingRU = _seoGenerator.GenerateHeading(productNameRU, Language.RU);
+                model.TitleRU = _seoGenerator.GenerateTitle(productNameRU, Language.RU);
+                model.KeywordsRU = _seoGenerator.GenerateKeywords(productNameRU, Language.RU);
+                model.DescriptionRU = _seoGenerator.GenerateDescription(productNameRU, Language.RU);
 
-            return View("Index", model);
+                var characteristics = await _description.GenerateAsync(productNameUA, Language.UA);
+
+                model.Characteristics = characteristics.Characteristics;
+
+                return View("Index", model);
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError(string.Empty, _localizer["AN_ERROR_OCCURRED_KEY"].Value);
+                return View("Index");
+            }
         }
 
         private static ContentGeneratorViewModel CreateModel()
