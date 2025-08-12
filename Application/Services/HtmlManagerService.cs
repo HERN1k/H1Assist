@@ -1,5 +1,4 @@
-﻿using System.Collections.Frozen;
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
 using AngleSharp;
 using AngleSharp.Css.Dom;
@@ -14,11 +13,31 @@ namespace Application.Services
     {
         private readonly ICacheService _cache;
         private readonly string _baseEKatalogUrl = "https://ek.ua/";
-        private static readonly string[] PropertiesToRemove = { "color", "font-family", "font-size", "line-height" };
+        private readonly string _baseBrainUrl = "https://brain.com.ua/";
+        private static readonly string[] _propertiesToSave = 
+            [ "margin-top", "margin-bottom", "margin", "font-size", "font-weight", 
+            "text-align", "display", "position", "height", "width" ];
 
         public HtmlManagerService(ICacheService cache)
         {
             this._cache = cache ?? throw new ArgumentNullException(nameof(cache));
+        }
+
+        public async Task<IDocument> GetDocumentAsync(string url)
+        {
+            if (_cache.TryGetValue(url, out IDocument? value))
+            {
+                return value!;
+            }
+
+            var config = Configuration.Default.WithDefaultLoader();
+            var context = BrowsingContext.New(config);
+
+            var document = await context.OpenAsync(url);
+
+            _cache.SetValue(url, document);
+
+            return document;
         }
 
         public async Task<IDocument> GetDocumentAsync(string productName, Language language, ExternalService service)
@@ -44,13 +63,13 @@ namespace Application.Services
             return document;
         }
 
-        public FrozenSet<ProductCharacteristic> ParseEKatalogCharacteristicsAsync(IDocument? document)
+        public List<ProductCharacteristic> ParseEKatalogCharacteristicsAsync(IDocument? document)
         {
             List<ProductCharacteristic> result = new List<ProductCharacteristic>();
 
             if (document == null)
             {
-                return FrozenSet<ProductCharacteristic>.Empty;
+                return result;
             }
 
             var table = document.GetElementById("help_table")
@@ -59,7 +78,7 @@ namespace Application.Services
 
             if (table == null)
             {
-                return FrozenSet<ProductCharacteristic>.Empty;
+                return result;
             }
 
             CleanEKatalogCharacteristicsAttributes(table);
@@ -97,12 +116,62 @@ namespace Application.Services
                 }
             }
 
-            return result.ToFrozenSet();
+            return result;
+        }
+
+        public (string, List<string>) CleanDescriptionHtml(IElement descriptionElement, string newImgFolderPath)
+        {
+            if (descriptionElement == null)
+                return (string.Empty, new List<string>());
+
+            RemoveCommentsRecursive(descriptionElement);
+            CleanEmptyElements(descriptionElement);
+            RemoveUnwantedAttributes(descriptionElement);
+
+            List<string> externalImages = new List<string>();
+
+            foreach (var img in descriptionElement.QuerySelectorAll("img"))
+            {
+                img.RemoveAttribute("alt");
+
+                var src = img.GetAttribute("src");
+                var style = img.GetAttribute("style");
+                if (!string.IsNullOrEmpty(src))
+                {
+                    externalImages.Add(src);
+
+                    img.SetAttribute("style", string.Concat(style, "width: inherit; height: inherit;"));
+                    img.SetAttribute("src", string.Concat(
+                        newImgFolderPath.TrimEnd('/'),
+                        "/",
+                        Path.GetFileNameWithoutExtension(src),
+                        ".jpg"
+                    ));
+                }
+            }
+
+            return (descriptionElement.InnerHtml, externalImages);
         }
 
         public async Task<string> DescriptionClean(string description)
         {
             return await CleanStylesAsync(description);
+        }
+
+        private static void RemoveCommentsRecursive(INode node)
+        {
+            for (int i = node.ChildNodes.Length - 1; i >= 0; i--)
+            {
+                var child = node.ChildNodes[i];
+                if (child.NodeType == NodeType.Comment)
+                {
+                    node.RemoveChild(child);
+                }
+                else
+                {
+                    RemoveCommentsRecursive(child);
+                }
+            }
         }
 
         private static async Task<string> CleanStylesAsync(string html)
@@ -125,20 +194,25 @@ namespace Application.Services
 
                 ICssStyleDeclaration styleDeclaration = cssParser.ParseDeclaration(styleContent);
 
-                foreach (var prop in PropertiesToRemove)
+                var allowedStyles = new List<string>();
+
+                foreach (var propertyName in _propertiesToSave)
                 {
-                    styleDeclaration.RemoveProperty(prop);
+                    var value = styleDeclaration.GetPropertyValue(propertyName);
+
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        allowedStyles.Add($"{propertyName}: {value}");
+                    }
                 }
 
-                var newCssText = styleDeclaration.CssText.Trim();
-
-                if (string.IsNullOrEmpty(newCssText))
+                if (allowedStyles.Count == 0)
                 {
                     element.RemoveAttribute("style");
                 }
                 else
                 {
-                    element.SetAttribute("style", newCssText);
+                    element.SetAttribute("style", string.Join("; ", allowedStyles));
                 }
             }
 
@@ -172,6 +246,52 @@ namespace Application.Services
                         continue;
 
                     child.RemoveAttribute(attr.Name);
+                }
+            }
+        }
+
+        private static void CleanEmptyElements(IElement element)
+        {
+            for (int i = element.Children.Length - 1; i >= 0; i--)
+            {
+                var child = element.Children[i];
+
+                CleanEmptyElements(child);
+
+                bool hasText = !string.IsNullOrWhiteSpace(child.TextContent);
+                bool hasChildren = child.Children.Length > 0;
+
+                bool hasUsefulAttrs = child.HasAttribute("src");
+
+                if (!hasText && !hasChildren && !hasUsefulAttrs)
+                {
+                    element.RemoveChild(child);
+                }
+            }
+        }
+
+        private static void RemoveUnwantedAttributes(IElement element)
+        {
+            foreach (var el in element.QuerySelectorAll("*"))
+            {
+                var attrsToRemove = new List<string>();
+
+                foreach (var attr in el.Attributes)
+                {
+                    if (attr.Name.StartsWith("data-"))
+                    {
+                        attrsToRemove.Add(attr.Name);
+                    }
+
+                    if (attr.Name == "style" && string.IsNullOrWhiteSpace(attr.Value))
+                    {
+                        attrsToRemove.Add(attr.Name);
+                    }
+                }
+
+                foreach (var attrName in attrsToRemove)
+                {
+                    el.RemoveAttribute(attrName);
                 }
             }
         }

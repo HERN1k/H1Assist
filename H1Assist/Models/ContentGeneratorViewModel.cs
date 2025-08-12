@@ -1,5 +1,4 @@
-﻿using System.Collections.Frozen;
-using Domain.ValueObjects;
+﻿using Domain.ValueObjects;
 
 namespace H1Assist.Models
 {
@@ -16,7 +15,6 @@ namespace H1Assist.Models
         public string TitleRU { get; set; } = string.Empty;
         public string KeywordsRU { get; set; } = string.Empty;
         public string DescriptionRU { get; set; } = string.Empty;
-        public FrozenSet<ProductCharacteristic> Characteristics { get; set; } = FrozenSet<ProductCharacteristic>.Empty;
-        public string CleanedDescription { get; set; } = string.Empty;
+        public List<ProductCharacteristic> Characteristics { get; set; } = new List<ProductCharacteristic>();
     }
 }

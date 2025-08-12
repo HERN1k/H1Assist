@@ -117,28 +117,31 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="IMAGE_EDITOR_KEY" xml:space="preserve">
-    <value>Image editor</value>
+  <data name="ClEAR_KEY" xml:space="preserve">
+    <value>Очистити</value>
   </data>
-  <data name="CONTENT_GENERATOR_KEY" xml:space="preserve">
-    <value>Content generator</value>
+  <data name="COPY_KEY" xml:space="preserve">
+    <value>Копіювати</value>
   </data>
-  <data name="APP_NAME_KEY" xml:space="preserve">
-    <value>H1Assist</value>
+  <data name="DESCRIPTION_CLEANER_KEY" xml:space="preserve">
+    <value>Очищення опису</value>
   </data>
-  <data name="ENGLISH_VERSION_KEY" xml:space="preserve">
-    <value>English version</value>
+  <data name="DESCRIPTION_LABLE_KEY" xml:space="preserve">
+    <value>Опис</value>
   </data>
-  <data name="UKRAINIAN_VERSION_KEY" xml:space="preserve">
-    <value>Ukrainian version</value>
+  <data name="DESCRIPTION_NOT_FOUND_KEY" xml:space="preserve">
+    <value>Опис не знайдено</value>
   </data>
-  <data name="PRIVACY_KEY" xml:space="preserve">
-    <value>Privacy</value>
+  <data name="INVALID_INPUT_DATA_KEY" xml:space="preserve">
+    <value>Недійсні вхідні дані</value>
   </data>
-  <data name="COPY_YEARS_KEY" xml:space="preserve">
-    <value>2025</value>
+  <data name="INVALID_URL_KEY" xml:space="preserve">
+    <value>Недійсна URL-адреса каталогу</value>
   </data>
-  <data name="DESCRIPTION_CONFIGURATOR_KEY" xml:space="preserve">
-    <value>Description configurator</value>
+  <data name="PAGE_TITLE_DESCRIPTION_CONFIGURATOR_KEY" xml:space="preserve">
+    <value>Конфігуратор опису</value>
+  </data>
+  <data name="RESULT_WILL_BE_HERE_KEY" xml:space="preserve">
+    <value>Результат буде тут</value>
   </data>
 </root>

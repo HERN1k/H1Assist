@@ -138,4 +138,7 @@
   <data name="COPY_YEARS_KEY" xml:space="preserve">
     <value>2025</value>
   </data>
+  <data name="DESCRIPTION_CONFIGURATOR_KEY" xml:space="preserve">
+    <value>Конфігуратор опису</value>
+  </data>
 </root>

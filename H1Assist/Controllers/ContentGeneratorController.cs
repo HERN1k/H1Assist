@@ -1,4 +1,6 @@
-﻿using Application.Interfaces;
+﻿using System.Text.Json;
+using Application.Interfaces;
+using Domain.Helpers;
 using Domain.ValueObjects;
 using H1Assist.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +26,7 @@ namespace H1Assist.Controllers
             this._localizer = localizer ?? throw new ArgumentNullException(nameof(localizer));
             this._description = description ?? throw new ArgumentNullException(nameof(description));
             this._htmlManager = htmlManager ?? throw new ArgumentNullException(nameof(htmlManager));
-        }
+        }   
 
         [HttpGet]
         public IActionResult Index()
@@ -39,68 +41,65 @@ namespace H1Assist.Controllers
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError(string.Empty, _localizer["INVALID_INPUT_DATA_KEY"].Value);
-                return View("Index");
+                return View(nameof(Index), CreateModel());
             }
 
             if (string.IsNullOrWhiteSpace(productNameUA) && string.IsNullOrWhiteSpace(productNameRU))
             {
                 ModelState.AddModelError(string.Empty, _localizer["PLEASE_PROVIDE_AT_LEAST_ONE_PRODUCT_NAME_KEY"].Value);
-                return View("Index");
+                return View(nameof(Index), CreateModel());
             }
 
             try
             {
                 productNameUA = productNameUA.Trim();
                 productNameRU = productNameRU.Trim();
+                List<ProductCharacteristic> characteristics = await _description.GenerateCharacteristicsAsync(productNameUA, Language.UA);
 
-                ContentGeneratorViewModel model = CreateModel();
+                TempData.Set(nameof(ContentGeneratorViewModel.ContentVisible), true);
+                TempData.Set(nameof(ContentGeneratorViewModel.ProductNameUA), productNameUA);
+                TempData.Set(nameof(ContentGeneratorViewModel.HeadingUA), _seoGenerator.GenerateHeading(productNameUA));
+                TempData.Set(nameof(ContentGeneratorViewModel.TitleUA), _seoGenerator.GenerateTitle(productNameUA));
+                TempData.Set(nameof(ContentGeneratorViewModel.KeywordsUA), _seoGenerator.GenerateKeywords(productNameUA));
+                TempData.Set(nameof(ContentGeneratorViewModel.DescriptionUA), _seoGenerator.GenerateDescription(productNameUA));
+                TempData.Set(nameof(ContentGeneratorViewModel.ProductNameRU), productNameRU);
+                TempData.Set(nameof(ContentGeneratorViewModel.HeadingRU), _seoGenerator.GenerateHeading(productNameRU, Language.RU));
+                TempData.Set(nameof(ContentGeneratorViewModel.TitleRU), _seoGenerator.GenerateTitle(productNameRU, Language.RU));
+                TempData.Set(nameof(ContentGeneratorViewModel.KeywordsRU), _seoGenerator.GenerateKeywords(productNameRU, Language.RU));
+                TempData.Set(nameof(ContentGeneratorViewModel.DescriptionRU), _seoGenerator.GenerateDescription(productNameRU, Language.RU));
+                TempData.Set(nameof(ContentGeneratorViewModel.Characteristics), JsonSerializer.Serialize(characteristics));
 
-                model.ContentVisible = true;
-
-                model.ProductNameUA = productNameUA;
-                model.HeadingUA = _seoGenerator.GenerateHeading(productNameUA);
-                model.TitleUA = _seoGenerator.GenerateTitle(productNameUA);
-                model.KeywordsUA = _seoGenerator.GenerateKeywords(productNameUA);
-                model.DescriptionUA = _seoGenerator.GenerateDescription(productNameUA);
-
-                model.ProductNameRU = productNameRU;
-                model.HeadingRU = _seoGenerator.GenerateHeading(productNameRU, Language.RU);
-                model.TitleRU = _seoGenerator.GenerateTitle(productNameRU, Language.RU);
-                model.KeywordsRU = _seoGenerator.GenerateKeywords(productNameRU, Language.RU);
-                model.DescriptionRU = _seoGenerator.GenerateDescription(productNameRU, Language.RU);
-
-                model.Characteristics = await _description.GenerateCharacteristicsAsync(productNameUA, Language.UA);
-
-                return View("Index", model);
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception)
             {
                 ModelState.AddModelError(string.Empty, _localizer["AN_ERROR_OCCURRED_KEY"].Value);
-                return View("Index");
+                return View(nameof(Index), CreateModel());
             }
         }
 
-        [HttpPost]
-        [ActionName("DescriptionClean")]
-        public async Task<IActionResult> DescriptionCleanAsync(string formattedHtml)
-        {
-            if (string.IsNullOrWhiteSpace(formattedHtml))
-            {
-                return View("Index", CreateModel());
-            }
-
-            ContentGeneratorViewModel model = CreateModel();
-
-            model.CleanedDescription = await _htmlManager.DescriptionClean(formattedHtml);
-
-            return View("Index", model);
-        }
-
-        private static ContentGeneratorViewModel CreateModel()
+        private ContentGeneratorViewModel CreateModel()
         {
             ContentGeneratorViewModel model = new ContentGeneratorViewModel();
 
             model.ContentVisible = false;
+
+            model.ContentVisible    = TempData.Get(nameof(ContentGeneratorViewModel.ContentVisible), model.ContentVisible);
+            model.ProductNameUA     = TempData.Get(nameof(ContentGeneratorViewModel.ProductNameUA), model.ProductNameUA);
+            model.HeadingUA         = TempData.Get(nameof(ContentGeneratorViewModel.HeadingUA), model.HeadingUA);
+            model.TitleUA           = TempData.Get(nameof(ContentGeneratorViewModel.TitleUA), model.TitleUA);
+            model.KeywordsUA        = TempData.Get(nameof(ContentGeneratorViewModel.KeywordsUA), model.KeywordsUA);
+            model.DescriptionUA     = TempData.Get(nameof(ContentGeneratorViewModel.DescriptionUA), model.DescriptionUA);
+            model.ProductNameRU     = TempData.Get(nameof(ContentGeneratorViewModel.ProductNameRU), model.ProductNameRU);
+            model.HeadingRU         = TempData.Get(nameof(ContentGeneratorViewModel.HeadingRU), model.HeadingRU);
+            model.TitleRU           = TempData.Get(nameof(ContentGeneratorViewModel.TitleRU), model.TitleRU);
+            model.KeywordsRU        = TempData.Get(nameof(ContentGeneratorViewModel.KeywordsRU), model.KeywordsRU);
+            model.DescriptionRU     = TempData.Get(nameof(ContentGeneratorViewModel.DescriptionRU), model.DescriptionRU);
+            model.Characteristics   = TempData.Get(
+                key: nameof(ContentGeneratorViewModel.Characteristics),
+                fallback: model.Characteristics,
+                func: value => value is string valueStr ? JsonSerializer.Deserialize<List<ProductCharacteristic>>(valueStr) : null
+            );
 
             return model;
         }
