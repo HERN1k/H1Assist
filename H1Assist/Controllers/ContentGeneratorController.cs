@@ -11,16 +11,19 @@ namespace H1Assist.Controllers
         private readonly ISeoGeneratorService _seoGenerator;
         private readonly IHtmlLocalizer<SharedResource> _localizer;
         private readonly IDescriptionService _description;
+        private readonly IHtmlManagerService _htmlManager;
 
         public ContentGeneratorController(
             ISeoGeneratorService seoGenerator, 
             IHtmlLocalizer<SharedResource> localizer,
-            IDescriptionService description
+            IDescriptionService description,
+            IHtmlManagerService htmlManager
         )
         {
             this._seoGenerator = seoGenerator ?? throw new ArgumentNullException(nameof(seoGenerator));
             this._localizer = localizer ?? throw new ArgumentNullException(nameof(localizer));
             this._description = description ?? throw new ArgumentNullException(nameof(description));
+            this._htmlManager = htmlManager ?? throw new ArgumentNullException(nameof(htmlManager));
         }
 
         [HttpGet]
@@ -31,7 +34,7 @@ namespace H1Assist.Controllers
 
         [HttpPost]
         [ActionName("Generate")]
-        public async Task<IActionResult> GenerateSeoContent(string productNameUA, string productNameRU)
+        public async Task<IActionResult> GenerateContentAsync(string productNameUA, string productNameRU)
         {
             if (!ModelState.IsValid)
             {
@@ -66,9 +69,7 @@ namespace H1Assist.Controllers
                 model.KeywordsRU = _seoGenerator.GenerateKeywords(productNameRU, Language.RU);
                 model.DescriptionRU = _seoGenerator.GenerateDescription(productNameRU, Language.RU);
 
-                var characteristics = await _description.GenerateAsync(productNameUA, Language.UA);
-
-                model.Characteristics = characteristics.Characteristics;
+                model.Characteristics = await _description.GenerateCharacteristicsAsync(productNameUA, Language.UA);
 
                 return View("Index", model);
             }
@@ -77,6 +78,22 @@ namespace H1Assist.Controllers
                 ModelState.AddModelError(string.Empty, _localizer["AN_ERROR_OCCURRED_KEY"].Value);
                 return View("Index");
             }
+        }
+
+        [HttpPost]
+        [ActionName("DescriptionClean")]
+        public async Task<IActionResult> DescriptionCleanAsync(string formattedHtml)
+        {
+            if (string.IsNullOrWhiteSpace(formattedHtml))
+            {
+                return View("Index", CreateModel());
+            }
+
+            ContentGeneratorViewModel model = CreateModel();
+
+            model.CleanedDescription = await _htmlManager.DescriptionClean(formattedHtml);
+
+            return View("Index", model);
         }
 
         private static ContentGeneratorViewModel CreateModel()

@@ -120,8 +120,20 @@
   <data name="CHARACTERISTICS_KEY" xml:space="preserve">
     <value>Characteristics</value>
   </data>
+  <data name="ClEAR_KEY" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="COPY_KEY" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="DESCRIPTION_CLEANER_KEY" xml:space="preserve">
+    <value>Description cleaner</value>
+  </data>
   <data name="DESCRIPTION_KEY" xml:space="preserve">
     <value>Description:</value>
+  </data>
+  <data name="DESCRIPTION_LABLE_KEY" xml:space="preserve">
+    <value>Description</value>
   </data>
   <data name="GANERATE_KEY" xml:space="preserve">
     <value>Generate</value>
@@ -143,6 +155,9 @@
   </data>
   <data name="PRODUCT_NAME_UA_KEY" xml:space="preserve">
     <value>Product name (UA)</value>
+  </data>
+  <data name="RESULT_WILL_BE_HERE_KEY" xml:space="preserve">
+    <value>Result will be here</value>
   </data>
   <data name="RUSSIAN_KEY" xml:space="preserve">
     <value>Russian</value>

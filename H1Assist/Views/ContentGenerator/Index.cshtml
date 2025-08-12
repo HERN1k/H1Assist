@@ -6,7 +6,17 @@
     var index = 0;
 }
 
-<h2 class="font-bold leading-snug tracking-normal text-slate-800 dark:text-slate-100 mx-auto mt-4 mb-8 w-full text-2xl lg:max-w-3xl 
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="text-rose-400 mt-4">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}
+
+<h2 class="font-bold leading-snug tracking-normal text-slate-800 dark:text-slate-100 mx-auto mt-4 mb-8 w-full text-2xl lg:max-w-3xl
            lg:text-4xl text-center">
     @Localizer["PAGE_TITLE_CONTENT_GENERATOR_KEY"]
 </h2>
@@ -51,17 +61,7 @@
     })
 </form>
 
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="text-rose-400 mt-4">
-        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-        {
-            <div>@error.ErrorMessage</div>
-        }
-    </div>
-}
-
-<div style="@((Model.ContentVisible as bool? ?? false) ? "display:block;" : "display:none;")">
+<div style="@(Model.ContentVisible ? "display:block;" : "display:none;")">
     <div class="relative flex flex-row items-center justify-center mb-10">
         <div class="relative w-6 lg:w-9 flex-none">
             <h2 class="absolute left-[-200%] top-1/2 -translate-y-1/2 w-max origin-center -rotate-90 font-bold leading-snug 
@@ -136,7 +136,7 @@
         </div>
     </div>
 
-    <div class="relative flex flex-col items-center justify-center">
+    <div class="relative flex flex-col items-center justify-center mb-10">
         <h2 class="font-bold leading-snug tracking-normal text-slate-800 dark:text-slate-100 text-2xl lg:text-4xl text-center">
             @Localizer["CHARACTERISTICS_KEY"]
         </h2>
@@ -161,3 +161,71 @@
         </div>
     </div>
 </div>
+
+<div class="relative flex flex-col items-center justify-center border-t-1 border-slate-300 dark:border-slate-600 ">
+    <h2 class="font-bold leading-snug tracking-normal text-slate-800 dark:text-slate-100 text-2xl lg:text-4xl text-center my-4">
+        @Localizer["DESCRIPTION_CLEANER_KEY"]
+    </h2>
+
+    <div class="w-full relative flex flex-row items-start justify-center gap-12">
+        <form 
+            id="descriptionEditorForm"
+            method="post"
+            asp-action="DescriptionClean"
+            asp-controller="ContentGenerator"
+            class="w-full flex flex-col gap-4 items-center justify-center flex-1"
+        >
+            <div class="w-full">
+                <p class="block text-sm font-medium text-gray-700 dark:text-gray-300">@Localizer["DESCRIPTION_LABLE_KEY"]</p>
+                <div 
+                     id="descriptionEditor"
+                     contenteditable="true"
+                     spellcheck="true" 
+                     class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200
+                            rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400
+                            hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow font-montserrat
+                            resize-none overflow-hidden"
+                ></div>
+
+                <input type="hidden" name="formattedHtml" id="formattedHtml" />
+            </div>
+            
+            @await Component.InvokeAsync("Button", new {
+                text = @Localizer["ClEAR_KEY"].Value,
+                type = "submit",
+                sizeClasses = "py-2 px-16"
+            })
+        </form>
+
+        <div class="flex-1 w-full">
+            <div class="mb-4 w-full">
+                <p class="block text-sm font-medium text-gray-700 dark:text-gray-300">@Localizer["RESULT_WILL_BE_HERE_KEY"]</p>
+                <div 
+                    id="cleanerResult"
+                    contenteditable="true"
+                     class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200
+                            rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400
+                            hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow font-montserrat
+                            resize-none overflow-hidden"
+                >
+                    @Html.Raw(@Model.CleanedDescription)
+                </div>
+            </div>
+
+            @await Component.InvokeAsync("Button", new {
+                text = @Localizer["COPY_KEY"].Value,
+                onclick = "CopyToClipboard.fromTextareaText('cleanerResult')",
+                sizeClasses = "py-2 px-16",
+                wrapperClasses = "flex items-center justify-center"
+            })
+        </div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById("descriptionEditorForm");
+    form.addEventListener("submit", () => {
+      const html = document.getElementById("descriptionEditor").innerHTML;
+      document.getElementById("formattedHtml").value = html;
+    });
+</script>

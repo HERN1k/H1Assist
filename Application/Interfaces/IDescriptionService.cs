@@ -1,9 +1,11 @@
-﻿using Domain.ValueObjects;
+﻿using System.Collections.Frozen;
+using Domain.ValueObjects;
 
 namespace Application.Interfaces
 {
     public interface IDescriptionService
     {
-        Task<ProductDescription> GenerateAsync(string productName, Language language);
+        Task<FrozenSet<ProductCharacteristic>> GenerateCharacteristicsAsync(string productName, Language language);
+        Task<ProductDescription> GenerateDescriptionAsync(string productName, Language language);
     }
 }

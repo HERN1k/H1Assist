@@ -13,6 +13,7 @@ namespace Application
             services.AddScoped<IDescriptionService, DescriptionService>();
             services.AddSingleton<ICacheService, CacheService>();
             services.AddScoped<IApiService, ApiService>();
+            services.AddScoped<IHtmlManagerService, HtmlManagerService>();
 
             return services;
         }
