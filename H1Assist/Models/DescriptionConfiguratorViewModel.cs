@@ -4,6 +4,6 @@
     {
         public string CleanedDescription { get; set; } = string.Empty;
         public string CleanDescriptionHtml { get; set; } = string.Empty;
-        public List<string> ExternalImages { get; set; } = new List<string>();
+        public Dictionary<string, string> ExternalImages { get; set; } = new Dictionary<string, string>();
     }
 }

@@ -13,19 +13,16 @@ namespace H1Assist.Controllers
         private readonly ISeoGeneratorService _seoGenerator;
         private readonly IHtmlLocalizer<SharedResource> _localizer;
         private readonly IDescriptionService _description;
-        private readonly IHtmlManagerService _htmlManager;
 
         public ContentGeneratorController(
             ISeoGeneratorService seoGenerator, 
             IHtmlLocalizer<SharedResource> localizer,
-            IDescriptionService description,
-            IHtmlManagerService htmlManager
+            IDescriptionService description
         )
         {
             this._seoGenerator = seoGenerator ?? throw new ArgumentNullException(nameof(seoGenerator));
             this._localizer = localizer ?? throw new ArgumentNullException(nameof(localizer));
             this._description = description ?? throw new ArgumentNullException(nameof(description));
-            this._htmlManager = htmlManager ?? throw new ArgumentNullException(nameof(htmlManager));
         }   
 
         [HttpGet]

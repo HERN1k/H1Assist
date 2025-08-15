@@ -40,17 +40,5 @@ namespace Application.Services
                 return new List<ProductCharacteristic>();
             }
         }
-
-        public async Task<ProductDescription> GenerateDescriptionAsync(string productName, Language language)
-        {
-            try
-            {
-                return new ProductDescription();
-            }
-            catch (Exception)
-            {
-                return new ProductDescription();
-            }
-        }
     }
 }

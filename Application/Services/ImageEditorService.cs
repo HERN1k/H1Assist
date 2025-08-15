@@ -70,6 +70,47 @@ namespace Application.Services
             }
         }
 
+        public async Task<byte[]> CreatePosterForVideoAsync(ImageExtension outputExtension, string url, string fileName)
+        {
+            if (string.IsNullOrEmpty(url))
+            {
+                throw new ArgumentException("URL cannot be null or empty.", nameof(url));
+            }
+
+            if (string.IsNullOrEmpty(fileName))
+            {
+                throw new ArgumentException("File name cannot be null or empty.", nameof(fileName));
+            }
+
+            string sharedDir = "/app/shared";
+            string id = Guid.NewGuid().ToString();
+            string dir = Path.Combine(sharedDir, $"{id}_poster");
+
+            try
+            {
+                Directory.CreateDirectory(dir);
+
+                string filePath = await FfmpegCreatePosterForVideoAsync(
+                    url: url,
+                    fileName: fileName,
+                    dir: dir,
+                    outputExtension: outputExtension
+                );
+
+                return File.ReadAllBytes(filePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while converting the image format.");
+                throw new InvalidOperationException("An error occurred while converting the image format.", ex);
+            }
+            finally
+            {
+                if (Directory.Exists(dir))
+                    Directory.Delete(dir, recursive: true);
+            }
+        }
+
         private async Task FfmpegConvertImageFormatAsync(string fileName, int width, string inputDir, string outputDir, ImageExtension outputExtension)
         {
             if (string.IsNullOrWhiteSpace(fileName) || !fileName.Contains('.'))
@@ -122,6 +163,56 @@ namespace Application.Services
                 _logger.LogError("Ffmpeg process failed: {Error}", error);
                 throw new InvalidOperationException($"Ffmpeg process failed: {error}");
             }
+        }
+
+        private async Task<string> FfmpegCreatePosterForVideoAsync(string url, string fileName, string dir, ImageExtension outputExtension)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                throw new ArgumentException("URL cannot be null or empty.", nameof(url));
+
+            if (string.IsNullOrWhiteSpace(fileName) || !fileName.Contains('.'))
+                throw new ArgumentException("Invalid file name.", nameof(fileName));
+
+            if (!Directory.Exists(dir))
+                throw new DirectoryNotFoundException($"Directory does not exist: {dir}");
+
+            if (!outputExtension.HasValue)
+                throw new ArgumentException("Output extension must be specified.", nameof(outputExtension));
+
+            string outputPath = string.Concat(Path.Combine(dir, Path.GetFileNameWithoutExtension(fileName)), outputExtension);
+
+            var psi = new ProcessStartInfo(
+                fileName: "ffmpeg",
+                arguments: $"-i \"{url}\" -ss 00:00:01 -vframes 1 \"{outputPath}\"")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+
+            if (process == null)
+            {
+                _logger.LogError("Failed to start ffmpeg process.");
+                throw new InvalidOperationException("Failed to start ffmpeg process.");
+            }
+
+            string output = await process.StandardOutput.ReadToEndAsync();
+            string error = await process.StandardError.ReadToEndAsync();
+
+            _logger.LogDebug("Ffmpeg processes file: {fileName}", fileName);
+
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                _logger.LogError("Ffmpeg process failed: {Error}", error);
+                throw new InvalidOperationException($"Ffmpeg process failed: {error}");
+            }
+
+            return outputPath;
         }
 
         private static async Task<byte[]> CreateZipInMemoryAsync(string sourceDirectory)

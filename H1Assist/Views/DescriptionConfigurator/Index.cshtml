@@ -22,7 +22,7 @@
             method="post"
             asp-action="FindDescription"
             asp-controller="DescriptionConfigurator"
-            class="w-full flex flex-col gap-4 items-center justify-center flex-1"
+            class="w-full flex flex-col gap-4 items-center justify-center flex-1 mb-4"
     >
         <input type="text" name="descriptionUrl" class="border" />
         <input type="text" name="dirUrl" class="border" />
@@ -38,14 +38,17 @@
         <ul>
             @foreach (var item in @Model.ExternalImages)
             {
-                string rowClass = index % 2 == 0 ? "bg-neutral-50 dark:bg-neutral-900" : string.Empty;
+                if (!item.Key.EndsWith(".mp4"))
+                {
+                    string rowClass = index % 2 == 0 ? "bg-neutral-50 dark:bg-neutral-900" : string.Empty;
 
-                <li class="flex flex-row items-center rounded-sm border border-slate-400 dark:border-slate-700
-                           overflow-hidden font-montserrat p-2 mb-2 @rowClass">
-                    <a href="@item" target="_blank" class="cursor-pointer">@item</a>
-                </li>
+                    <li class="flex flex-row items-center rounded-sm border border-slate-400 dark:border-slate-700
+                                           overflow-hidden font-montserrat p-2 mb-2 @rowClass">
+                        <a href="@item.Key" download="@item.Value" target="_blank" class="cursor-pointer line-clamp-1">@item.Key</a>
+                    </li>
 
-                index++;
+                    index++;
+                }
             }
         </ul>
     </div>

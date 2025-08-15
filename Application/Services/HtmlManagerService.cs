@@ -9,18 +9,48 @@ using Domain.ValueObjects;
 
 namespace Application.Services
 {
-    internal class HtmlManagerService : IHtmlManagerService
+    internal partial class HtmlManagerService : IHtmlManagerService
     {
         private readonly ICacheService _cache;
+        private readonly IImageEditorService _imageEditor;
         private readonly string _baseEKatalogUrl = "https://ek.ua/";
-        private readonly string _baseBrainUrl = "https://brain.com.ua/";
         private static readonly string[] _propertiesToSave = 
             [ "margin-top", "margin-bottom", "margin", "font-size", "font-weight", 
             "text-align", "display", "position", "height", "width" ];
+        private const string _alloStyles = """
+            .p-description {
+                height: auto;
+                position: relative;
+            }
+            .p-view__description {
+                order: 0;
+                flex: 100% 1 1;
+                width: 100%;
+                margin-right: 0;
+                margin-left: 0;
+                box-shadow: none;
+                background: transparent;
+            }
+            .p-description__content {
+                position: relative;
+                max-height: 1026px;
+                font-size: 16px;
+                line-height: 24px;
+                color: #929292;
+                overflow: hidden;
+                transition: max-height 1s;
+            }
+            .p-description__content__inner {
+            }
+            .l-container {
+                max-width: 100% !important;
+            }
+            """;
 
-        public HtmlManagerService(ICacheService cache)
+        public HtmlManagerService(ICacheService cache, IImageEditorService imageEditor)
         {
             this._cache = cache ?? throw new ArgumentNullException(nameof(cache));
+            this._imageEditor = imageEditor ?? throw new ArgumentNullException(nameof(imageEditor));
         }
 
         public async Task<IDocument> GetDocumentAsync(string url)
@@ -119,43 +149,187 @@ namespace Application.Services
             return result;
         }
 
-        public (string, List<string>) CleanDescriptionHtml(IElement descriptionElement, string newImgFolderPath)
+        public async Task<string> DescriptionClean(string description)
+        {
+            return await CleanStylesAsync(description);
+        }
+
+        public async Task<(string, Dictionary<string, string>)> CleanDescriptionHtmlAsync(IElement descriptionElement, ExternalService service, string? newMediaFolderPath = "")
         {
             if (descriptionElement == null)
-                return (string.Empty, new List<string>());
+                return (string.Empty, new Dictionary<string, string>());
+
+            Dictionary<string, string> externalMedia = new Dictionary<string, string>();
+            bool changeURL = !string.IsNullOrEmpty(newMediaFolderPath);
 
             RemoveCommentsRecursive(descriptionElement);
             CleanEmptyElements(descriptionElement);
             RemoveUnwantedAttributes(descriptionElement);
-
-            List<string> externalImages = new List<string>();
-
-            foreach (var img in descriptionElement.QuerySelectorAll("img"))
-            {
-                img.RemoveAttribute("alt");
-
-                var src = img.GetAttribute("src");
-                var style = img.GetAttribute("style");
-                if (!string.IsNullOrEmpty(src))
-                {
-                    externalImages.Add(src);
-
-                    img.SetAttribute("style", string.Concat(style, "width: inherit; height: inherit;"));
-                    img.SetAttribute("src", string.Concat(
-                        newImgFolderPath.TrimEnd('/'),
-                        "/",
-                        Path.GetFileNameWithoutExtension(src),
-                        ".jpg"
-                    ));
-                }
-            }
-
-            return (descriptionElement.InnerHtml, externalImages);
+            RemoveStylesComments(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
+            await CreateVideoPoster(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
+            ProcessMediaURLs(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
+            
+            return (AddInjectStyleFunction(descriptionElement, service), externalMedia);
         }
 
-        public async Task<string> DescriptionClean(string description)
+        private static void RemoveStylesComments(IElement description, Dictionary<string, string> externalMedia, bool changeURL, string? newMediaFolderPath = "")
         {
-            return await CleanStylesAsync(description);
+            foreach (var styleEl in description.QuerySelectorAll("style"))
+            {
+                if (!string.IsNullOrWhiteSpace(styleEl.TextContent))
+                {
+                    string cleaned = StyleCommentRegex().Replace(styleEl.TextContent, string.Empty);
+
+                    if (changeURL)
+                    {
+                        cleaned = StyleUrlRegex().Replace(cleaned, m =>
+                        {
+                            string oldUrl = m.Groups["url"].Value;
+                            string newUrl = ReplaceAndTrackUrl(oldUrl, externalMedia, newMediaFolderPath);
+                            return $"url('{newUrl}')";
+                        });
+                    }
+
+                    styleEl.TextContent = cleaned.Trim();
+                }
+            }
+        }
+
+        private static void ProcessMediaURLs(IElement description, Dictionary<string, string> externalMedia, bool changeURL, string? newMediaFolderPath = "")
+        {
+            foreach (var img in description.QuerySelectorAll("img"))
+            {
+                if (changeURL)
+                    ProcessMediaTag(img, "src", externalMedia, newMediaFolderPath);
+
+                img.RemoveAttribute("alt");
+                img.SetAttribute(
+                    "style",
+                    (img.GetAttribute("style") ?? string.Empty) + "width: inherit; height: inherit;"
+                );
+            }
+
+            foreach (var video in description.QuerySelectorAll("video"))
+            {
+                if (changeURL)
+                {
+                    ProcessMediaTag(video, "src",  externalMedia, newMediaFolderPath);
+                }
+
+                video.RemoveAttribute("alt");
+                video.SetAttribute(
+                    "style",
+                    (video.GetAttribute("style") ?? string.Empty) + " width: inherit; height: inherit;"
+                );
+            }
+
+            if (changeURL)
+            { 
+                foreach (var el in description.QuerySelectorAll("*"))
+                {
+                    var style = el.GetAttribute("style");
+                    if (!string.IsNullOrWhiteSpace(style))
+                    {
+                        string updated = StyleUrlRegex().Replace(style, m =>
+                        {
+                            string oldUrl = m.Groups["url"].Value;
+                            string newUrl = ReplaceAndTrackUrl(oldUrl, externalMedia, newMediaFolderPath);
+                            return $"url('{newUrl}')";
+                        });
+
+                        el.SetAttribute("style", updated);
+                    }
+                }
+            }
+        }
+
+        private async Task CreateVideoPoster(IElement description, Dictionary<string, string> externalMedia, bool changeURL, string? newMediaFolderPath = "")
+        {
+            int index = 0;
+            foreach (var video in description.QuerySelectorAll("video"))
+            {
+                if (changeURL)
+                {
+                    string? videoSrc = video.GetAttribute("src")?.Trim();
+
+                    if (!string.IsNullOrEmpty(videoSrc))
+                    {
+                        string posterName = string.Concat("poster-", index.ToString(), ".jpg");
+
+                        byte[] image = await _imageEditor.CreatePosterForVideoAsync(ImageExtension.JPG, videoSrc, posterName);
+
+                        string imageBase64 = string.Concat("data:image/jpg;base64,", Convert.ToBase64String(image));
+
+                        externalMedia.TryAdd(imageBase64, posterName);
+
+                        video.RemoveAttribute("poster");
+                        video.SetAttribute("poster", string.Concat(newMediaFolderPath, posterName));
+                    }
+                }
+
+                index++;
+            }
+        }
+
+        private static string AddInjectStyleFunction(IElement description, ExternalService service)
+        {
+            var styles = description
+                .QuerySelectorAll("style")
+                .ToList();
+
+            string externalStyles = service switch
+            {
+                ExternalService.Allo => _alloStyles,
+                _ => string.Empty
+            };
+
+            string styleString = string.Concat(externalStyles, string.Join(' ', styles.Select(style => style.InnerHtml)));
+
+            foreach (var style in styles)
+            {
+                style.Remove();
+            }
+
+            return string.Concat(
+                $$"""
+                <script>
+                    function injectStyle() {
+                        const styleEl = document.createElement('style');
+                        styleEl.type = 'text/css';
+                        styleEl.textContent = `{{styleString
+                            .Replace("\\", "\\\\")
+                            .Replace("`", "\\`")
+                            .Replace("${", "\\${")}}`;
+    
+                        const currentScript = document.currentScript;
+                        currentScript.parentNode.insertBefore(styleEl, currentScript.nextSibling);
+                    };
+
+                    injectStyle();
+                </script>
+                """,
+                description.InnerHtml
+            );
+        }
+
+        private static void ProcessMediaTag(IElement element, string attrName, Dictionary<string, string> externalList, string? folderPath = "")
+        {
+            var url = element.GetAttribute(attrName)?.Trim();
+            if (string.IsNullOrEmpty(url))
+                return;
+
+            string newUrl = ReplaceAndTrackUrl(url, externalList, folderPath);
+            element.SetAttribute(attrName, newUrl);
+        }
+
+        private static string ReplaceAndTrackUrl(string oldUrl, Dictionary<string, string> externalList, string? folderPath = "")
+        {
+            string cleanUrl = oldUrl.Split('?')[0];
+            string fileName = Path.GetFileNameWithoutExtension(cleanUrl);
+
+            externalList.TryAdd(oldUrl, Path.GetFileName(cleanUrl));
+
+            return string.Concat(folderPath?.TrimEnd('/') ?? string.Empty, "/", fileName, ImageExtension.JPG.Value);
         }
 
         private static void RemoveCommentsRecursive(INode node)
@@ -308,5 +482,11 @@ namespace Application.Services
 
             return sb.ToString();
         }
+
+        [GeneratedRegex(@"/\*[\s\S]*?\*/")]
+        private static partial Regex StyleCommentRegex();
+
+        [GeneratedRegex(@"url\(['""]?(?<url>[^'"")]+)['""]?\)", RegexOptions.IgnoreCase, "ru-UA")]
+        private static partial Regex StyleUrlRegex();
     }
 }

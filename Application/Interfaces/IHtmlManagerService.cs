@@ -8,7 +8,7 @@ namespace Application.Interfaces
         Task<IDocument> GetDocumentAsync(string url);
         Task<IDocument> GetDocumentAsync(string productName, Language language, ExternalService service);
         List<ProductCharacteristic> ParseEKatalogCharacteristicsAsync(IDocument? document);
-        (string, List<string>) CleanDescriptionHtml(IElement descriptionElement, string newImgFolderPath);
         Task<string> DescriptionClean(string description);
+        Task<(string, Dictionary<string, string>)> CleanDescriptionHtmlAsync(IElement descriptionElement, ExternalService service, string? newMediaFolderPath = "");
     }
 }

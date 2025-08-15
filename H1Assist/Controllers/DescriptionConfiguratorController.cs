@@ -1,9 +1,15 @@
 ﻿using System.Text.Json;
 using System.Text.RegularExpressions;
+
 using AngleSharp.Dom;
+
 using Application.Interfaces;
+
 using Domain.Helpers;
+using Domain.ValueObjects;
+
 using H1Assist.Models;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Localization;
 
@@ -15,45 +21,7 @@ namespace H1Assist.Controllers
         private readonly IDescriptionService _description;
         private readonly IHtmlManagerService _htmlManager;
         private static readonly Regex _urlRegex = UrlRegex();
-        private const string _brainStyles = """
-        <style>
-        .description-block {
-            display: flex;
-            flex-direction: column;
-            min-height: 200px;
-            position: relative;
-            width: 100%;
-        }
-        .background-image {
-            order: 2;
-            width: 100%;
-            margin: 0 auto;
-        }
-        .description-content {
-            order: 1;
-            width: 100%;
-        }
-        .description-title {
-            font-size: 21px;
-            font-weight: 700;
-            line-height: 34px;
-            padding: 15px 2% 4px;
-            text-align: center;
-            width: 100%;
-        }
-        .description-text {
-            color: #000;
-            font-size: 16px;
-            font-weight: 400;
-            line-height: 20px;
-            margin-bottom: 14px;
-            padding: 4px 5% 0;
-            text-align: center;
-            width: 100%;
-        }
-        </style>
-        """;
-
+        
         public DescriptionConfiguratorController(
             IHtmlLocalizer<SharedResource> localizer,
             IDescriptionService description,
@@ -74,16 +42,16 @@ namespace H1Assist.Controllers
         [HttpPost]
         [ActionName("FindDescription")]
         //public async Task<IActionResult> FindDescriptionAsync(string descriptionUrl, string dirUrl, string externalService)
-        public async Task<IActionResult> FindDescriptionAsync(string descriptionUrl, string dirUrl)
+        public async Task<IActionResult> FindDescriptionAsync(string descriptionUrl, string? dirUrl = "")
         {
             //if (!ModelState.IsValid || string.IsNullOrWhiteSpace(descriptionUrl) || string.IsNullOrWhiteSpace(dirUrl) || string.IsNullOrWhiteSpace(externalService))
-            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(descriptionUrl) || string.IsNullOrWhiteSpace(dirUrl))
+            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(descriptionUrl))
             {
                 ModelState.AddModelError(string.Empty, _localizer["INVALID_INPUT_DATA_KEY"].Value);
                 return View(nameof(Index), CreateModel());
             }
 
-            if (!_urlRegex.IsMatch(descriptionUrl) || !_urlRegex.IsMatch(dirUrl))
+            if (!_urlRegex.IsMatch(descriptionUrl))
             {
                 ModelState.AddModelError(string.Empty, _localizer["INVALID_URL_KEY"].Value);
                 return View(nameof(Index), CreateModel());
@@ -93,7 +61,7 @@ namespace H1Assist.Controllers
             {
                 IDocument document = await _htmlManager.GetDocumentAsync(descriptionUrl);
 
-                IElement? element = document.QuerySelector(".product-additional-description");
+                IElement? element = document.QuerySelectorAll(".p-description__content").ElementAtOrDefault(0);
 
                 if (element == null)
                 {
@@ -101,20 +69,15 @@ namespace H1Assist.Controllers
                     return View(nameof(Index), CreateModel());
                 }
 
-                (string cleanDescriptionHtml, List<string> externalImages) = _htmlManager.CleanDescriptionHtml(element, dirUrl);
+                (
+                    string cleanDescriptionHtml,
+                    Dictionary<string, string> externalImages
+                ) = await _htmlManager.CleanDescriptionHtmlAsync(element, ExternalService.Allo, dirUrl);
 
-                if (true)
-                {
-                    cleanDescriptionHtml = string.Concat(_brainStyles, cleanDescriptionHtml);
-                }
-
-                var model = CreateModel();
+                DescriptionConfiguratorViewModel model = CreateModel();
 
                 model.ExternalImages = externalImages;
                 model.CleanDescriptionHtml = cleanDescriptionHtml;
-
-                //TempData.Set(nameof(DescriptionConfiguratorViewModel.ExternalImages), JsonSerializer.Serialize(externalImages));
-                //TempData.Set(nameof(DescriptionConfiguratorViewModel.CleanDescriptionHtml), cleanDescriptionHtml);
 
                 return View(nameof(Index), model);
             }
@@ -134,28 +97,20 @@ namespace H1Assist.Controllers
 
             if (string.IsNullOrWhiteSpace(formattedHtml))
             {
-                return RedirectToAction(nameof(Index), CreateModel());
+                return View(nameof(Index), CreateModel());
             }
 
-            string cleanedDescription = await _htmlManager.DescriptionClean(formattedHtml);
+            DescriptionConfiguratorViewModel model = CreateModel();
 
-            TempData.Set(nameof(DescriptionConfiguratorViewModel.CleanedDescription), cleanedDescription);
+            model.CleanedDescription = await _htmlManager.DescriptionClean(formattedHtml);
 
-            return RedirectToAction(nameof(Index));
+            return View(nameof(Index), model);
         }
 
-        private DescriptionConfiguratorViewModel CreateModel()
+        private static DescriptionConfiguratorViewModel CreateModel()
         {
             DescriptionConfiguratorViewModel model = new DescriptionConfiguratorViewModel();
 
-            //model.CleanedDescription = TempData.Get(nameof(DescriptionConfiguratorViewModel.CleanedDescription), model.CleanedDescription);
-            //model.CleanDescriptionHtml = TempData.Get(nameof(DescriptionConfiguratorViewModel.CleanDescriptionHtml), model.CleanDescriptionHtml);
-            //model.ExternalImages = TempData.Get(
-            //    key: nameof(DescriptionConfiguratorViewModel.ExternalImages),
-            //    fallback: model.ExternalImages,
-            //    func: value => value is string valueStr ? JsonSerializer.Deserialize<List<string>>(valueStr) : null
-            //);
-            
             return model;
         }
 
