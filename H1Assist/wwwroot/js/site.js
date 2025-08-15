@@ -2,7 +2,7 @@
     static fromElementById(id) {
         const text = document.getElementById(id)?.innerText;
         if (text !== undefined && text !== null) {
-            navigator.clipboard.writeText(text).catch(err => console.error(err));
+            navigator.clipboard.writeText(text.trim()).catch(err => console.error(err));
         }
     }
 
@@ -16,7 +16,7 @@
         document.body.appendChild(textarea);
         textarea.select();
         try {
-            navigator.clipboard.writeText(textarea.value).catch(err => console.error(err));
+            navigator.clipboard.writeText(textarea.value.trim()).catch(err => console.error(err));
         } finally {
             document.body.removeChild(textarea);
         }

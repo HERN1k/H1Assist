@@ -1,11 +1,10 @@
-﻿using System.Text.Json;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 using AngleSharp.Dom;
 
+using Application.DTOs;
 using Application.Interfaces;
 
-using Domain.Helpers;
 using Domain.ValueObjects;
 
 using H1Assist.Models;
@@ -59,25 +58,20 @@ namespace H1Assist.Controllers
 
             try
             {
-                IDocument document = await _htmlManager.GetDocumentAsync(descriptionUrl);
+                CleanDescriptionHtmlDto? description = await _description.CleanHtmlAsync(descriptionUrl, dirUrl);
 
-                IElement? element = document.QuerySelectorAll(".p-description__content").ElementAtOrDefault(0);
+                // Нужно в стандартные стили добавить монтсертат шрифт обезательно и добавить фонт фемили в обьортку!
 
-                if (element == null)
+                if (description == null)
                 {
                     ModelState.AddModelError(string.Empty, _localizer["DESCRIPTION_NOT_FOUND_KEY"].Value);
                     return View(nameof(Index), CreateModel());
                 }
 
-                (
-                    string cleanDescriptionHtml,
-                    Dictionary<string, string> externalImages
-                ) = await _htmlManager.CleanDescriptionHtmlAsync(element, ExternalService.Allo, dirUrl);
-
                 DescriptionConfiguratorViewModel model = CreateModel();
 
-                model.ExternalImages = externalImages;
-                model.CleanDescriptionHtml = cleanDescriptionHtml;
+                model.ExternalImages = description.ExternalImages;
+                model.CleanDescriptionHtml = description.Value;
 
                 return View(nameof(Index), model);
             }

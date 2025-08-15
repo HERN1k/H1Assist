@@ -1,6 +1,10 @@
 ﻿using System.Collections.Frozen;
+
 using AngleSharp.Dom;
+
+using Application.DTOs;
 using Application.Interfaces;
+
 using Domain.ValueObjects;
 
 namespace Application.Services
@@ -39,6 +43,25 @@ namespace Application.Services
             {
                 return new List<ProductCharacteristic>();
             }
+        }
+
+        public async Task<CleanDescriptionHtmlDto?> CleanHtmlAsync(string descriptionUrl, string? dirUrl = "")
+        {
+            if (string.IsNullOrWhiteSpace(descriptionUrl))
+            {
+                return null;
+            }
+
+            IDocument document = await _htmlManager.GetDocumentAsync(descriptionUrl, false);
+
+            IElement? element = document.QuerySelectorAll(".p-description__content").ElementAtOrDefault(0);
+
+            if (element == null)
+            {
+                return null;
+            }
+
+            return await _htmlManager.CleanDescriptionHtmlAsync(element, ExternalService.Allo, dirUrl);
         }
     }
 }
