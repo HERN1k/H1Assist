@@ -12,5 +12,6 @@
         /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the deserialized object of type T, or null if the request failed or the URL was invalid.</returns>
         Task<string?> GetAsync(string url, CancellationToken ct = default);
+        Task DownloadImagesToDirectoryAsync(List<string> links, string directory, CancellationToken ct = default);
     }
 }

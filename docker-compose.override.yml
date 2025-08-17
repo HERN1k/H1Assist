@@ -6,6 +6,7 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_HTTPS_PORTS=8081
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
+      - SCRAPE_DO_API_KEY=36f9104d3250469986e38a284e0365d4f96a9244091
     ports:
       - "8080:8080"
       - "8081:8081"
@@ -18,7 +19,7 @@ services:
       - shared-data:/app/shared
     networks:
       - internal
-
+      
   nginx:
     image: nginx:alpine
     container_name: Nginx

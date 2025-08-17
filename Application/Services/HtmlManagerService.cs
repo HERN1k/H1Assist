@@ -1,12 +1,11 @@
 ﻿using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-
 using AngleSharp;
 using AngleSharp.Css.Dom;
 using AngleSharp.Css.Parser;
 using AngleSharp.Dom;
-
+using AngleSharp.Io.Network;
 using Application.DTOs;
 using Application.Interfaces;
 using Domain.ValueObjects;
@@ -18,13 +17,20 @@ namespace Application.Services
     internal partial class HtmlManagerService : IHtmlManagerService
     {
         private readonly ICacheService _cache;
+        private readonly IApiService _apiService;
         private readonly IImageEditorService _imageEditor;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<HtmlManagerService> _logger;
+        private readonly ExternalService[] _onlyChromiumOpen = [ ExternalService.Comfy ];
         private readonly string _baseEKatalogUrl = "https://ek.ua/";
         private static readonly string[] _propertiesToSave = 
             [ "margin-top", "margin-bottom", "margin", "font-size", "font-weight", 
             "text-align", "display", "position", "height", "width" ];
-        private const string _alloStyles = """
+        private const string _baseStyles = """
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+            .desc * {
+                font-family: 'Montserrat', sans-serif !important;
+            }
             @media (max-width: 499px) {
                 .desc * {
                     width: auto !important;
@@ -35,6 +41,11 @@ namespace Application.Services
                     max-width: 100% !important;
                 }
             }
+            .contenteditable-area {
+                font-family: 'Montserrat', sans-serif !important;
+            }
+            """;
+        private const string _alloStyles = """
             .p-description {
                 height: auto;
                 position: relative;
@@ -63,28 +74,164 @@ namespace Application.Services
                 max-width: 100% !important;
             }
             """;
+        private const string _foxtrotStyles = """
+            .product-about {
+                display: flex !important;
+            }
+            .contenteditable-area h3 {
+                font-size: 24px;
+                display: block;
+                width: 100%;
+                margin-bottom: 25px;
+                font-weight: 500;
+            }
+            .about-detail h3 {
+                font-size: 24px;
+                display: block;
+                width: 100%;
+                margin-bottom: 25px;
+                font-weight: 500;
+            }
+            .contenteditable-area p {
+                font-size: 16px;
+                line-height: 1.4;
+                margin-bottom: 25px;
+                width: 100%;
+            }
+            .about-detail p {
+                font-size: 16px;
+                line-height: 1.4;
+                margin-bottom: 25px;
+                width: 100%;
+            }
+            .product-about p {
+                font-size: 16px;
+                line-height: 1.4;
+                margin-bottom: 25px;
+                width: 100%;
+            }
+            """;
+        private const string _brainStyles = """
+            .description-block {
+                display: flex !important;
+                flex-direction: column;
+                min-height: 200px;
+                position: relative;
+                width: 100% !important;
+            }
+            .background-image {
+                order: 2 !important;
+                width: 100% !important;
+            }
+            .background-image img {
+                display: block !important;
+                margin: 0 auto !important;
+                width: 100% !important;
+            }
+            .description-block .description-content {
+                order: 1 !important;
+                width: 100% !important;
+            }
+            .description-content .description-title {
+                color: #000;
+                font-size: 21px;
+                font-weight: 700;
+                line-height: 34px;
+                padding: 15px 2% 4px;
+                text-align: center;
+                width: 100% !important;
+            }
+            .description-content .description-text {
+                color: #000;
+                font-size: 16px;
+                font-weight: 400;
+                line-height: 20px;
+                margin-bottom: 14px;
+                padding: 4px 5% 0;
+                text-align: center;
+                width: 100% !important;
+            }
+            """;
+        private const string _comfyStyles = """
+            .gen-sect__body {
+                max-width: 100% !important;
+                line-height: 2.5rem;
+            }
+            .gen-sect__title {
+                margin: 0 auto !important;
+                max-width: 100rem;
+                text-align: center;
+                font-weight: 600;
+                font-size: 1.8rem;
+                line-height: 2rem;
+                margin-bottom: 1.6rem;
+            }
+            .bc-description__content {
+                z-index: 1;
+                font-size: 1.6rem;
+                font-weight: 400;
+                overflow: hidden;
+            }
+            @media (min-width: 1024px) {
+                .gen-sect__header {
+                    display: flex !important;
+                    flex-wrap: wrap;
+                    align-items: baseline;
+                    gap: 1rem;
+                    margin-bottom: 3.2rem;
+                }
+            }
+            @media (min-width: 1024px) {
+                .bc-description__content--expanded {
+                    position: relative;
+                    margin-top: 1.8rem;
+                    max-height: none;
+                }
+                .bc-description__content {
+                    position: relative;
+                    margin-top: 1.8rem;
+                    max-height: none;
+                }
+            }
+            """;
 
-        public HtmlManagerService(ICacheService cache, IImageEditorService imageEditor, ILogger<HtmlManagerService> logger)
+        public HtmlManagerService(
+            ICacheService cache, 
+            IApiService apiService,
+            IImageEditorService imageEditor,
+            IHttpClientFactory httpClientFactory,
+            ILogger<HtmlManagerService> logger
+        )
         {
             this._cache = cache ?? throw new ArgumentNullException(nameof(cache));
+            this._apiService = apiService ?? throw new ArgumentNullException(nameof(apiService));
             this._imageEditor = imageEditor ?? throw new ArgumentNullException(nameof(imageEditor));
+            this._httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<IDocument> GetDocumentAsync(string url, bool useCache = true)
+        public async Task<IDocument?> GetDocumentAsync(string url, ExternalService service, bool useCache = true)
         {
-            if (useCache && _cache.TryGetValue(url, out IDocument? value))
+            string cacheKey = $"Document_{service}_{url}";
+
+            if (useCache && _cache.TryGetValue(cacheKey, out string? value))
             {
-                return value!;
+                return await GetBrowsingContext().OpenAsync(req => req.Content(value));
             }
 
-            var config = Configuration.Default.WithDefaultLoader();
-            var context = BrowsingContext.New(config);
-
-            var document = await context.OpenAsync(url);
+            IDocument? document = null;
+            if (_onlyChromiumOpen.Contains(service))
+            {
+                document = await GetDocumentUsingScrapeAsync(url);
+            } 
+            else
+            {
+                document = await GetBrowsingContext().OpenAsync(url);
+            }
 
             if (useCache)
-                _cache.SetValue(url, document);
+                if (document != null)
+                    _cache.SetValue(cacheKey, document.ToHtml());
 
             return document;
         }
@@ -102,10 +249,7 @@ namespace Application.Services
                 return value!;
             }
 
-            var config = Configuration.Default.WithDefaultLoader();
-            var context = BrowsingContext.New(config);
-
-            var document = await context.OpenAsync(url);
+            IDocument document = await GetBrowsingContext().OpenAsync(url);
 
             if (useCache)
                 _cache.SetValue(url, document);
@@ -174,25 +318,138 @@ namespace Application.Services
             return await CleanStylesAsync(description);
         }
 
-        public async Task<CleanDescriptionHtmlDto> CleanDescriptionHtmlAsync(IElement descriptionElement, ExternalService service, string? newMediaFolderPath = "")
+        public async Task<CleanDescriptionHtmlDto> CleanDescriptionHtmlAsync(IElement descriptionElement, ExternalService service, string? newMediaFolderPath = "", bool useCache = true)
         {
             if (descriptionElement == null)
                 return new CleanDescriptionHtmlDto(string.Empty, new Dictionary<string, string>());
 
-            Dictionary<string, string> externalMedia = new Dictionary<string, string>();
-            bool changeURL = !string.IsNullOrEmpty(newMediaFolderPath);
+            string cacheKey = $"CleanDescriptionHtml_{service}_{newMediaFolderPath}";
 
-            RemoveCommentsRecursive(descriptionElement);
-            CleanEmptyElements(descriptionElement);
-            RemoveUnwantedAttributes(descriptionElement);
-            RemoveUnusedStyleClasses(descriptionElement);
-            RemoveStylesComments(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
-            await CreateVideoPoster(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
-            ProcessMediaURLs(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
-            string descriptionHtml = AddInjectStyleFunction(descriptionElement, service);
-            string result = MinifyHtml(descriptionHtml);
+            if (useCache && _cache.TryGetValue(cacheKey, out CleanDescriptionHtmlDto? value))
+                if (value != null)
+                    return value;
 
-            return new CleanDescriptionHtmlDto(result, externalMedia);
+            try
+            {
+                Dictionary<string, string> externalMedia = new Dictionary<string, string>();
+                bool changeURL = !string.IsNullOrEmpty(newMediaFolderPath);
+
+                SetSrcFromAttribute(descriptionElement);
+                await LoadExternalCss(descriptionElement);
+                RemoveCommentsRecursive(descriptionElement);
+                CleanEmptyElements(descriptionElement);
+                RemoveUnwantedAttributes(descriptionElement);
+                RemoveUnusedStyleClasses(descriptionElement);
+                RemoveStylesComments(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
+                await CreateVideoPoster(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
+                ProcessMediaURLs(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
+                string resultHtml = MinifyHtml(AddInjectStyleFunction(descriptionElement, service));
+
+                CleanDescriptionHtmlDto result = new CleanDescriptionHtmlDto(resultHtml, externalMedia); ;
+
+                if (useCache)
+                    _cache.SetValue(cacheKey, result);  
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cleaning description HTML.");
+                return new CleanDescriptionHtmlDto(string.Empty, new Dictionary<string, string>());
+            }
+        }
+
+        private async Task LoadExternalCss(IElement description)
+        {
+            List<IElement> links = description.QuerySelectorAll("link[rel='stylesheet']").ToList();
+
+            foreach (var link in links)
+            {
+                string? href = link.GetAttribute("href");
+                if (string.IsNullOrWhiteSpace(href))
+                    continue;
+
+                try
+                {
+                    string? cssContent = await _apiService.GetAsync(href);
+                    if (!string.IsNullOrWhiteSpace(cssContent))
+                    {
+                        ICssStyleSheet styleSheet = new CssParser().ParseStyleSheet(cssContent);
+
+                        if (description.Owner != null && styleSheet.Rules.Length > 0)
+                        {
+                            IEnumerable<ICssStyleRule> safeRules = styleSheet.Rules
+                                .OfType<ICssStyleRule>()
+                                .Where(r => r.SelectorText != "*" && r.SelectorText != "html, body");
+
+                            if (safeRules.Any())
+                            {
+                                IElement styleElement = description.Owner.CreateElement("style");
+                                styleElement.TextContent = string.Join("\n", safeRules.Select(r => r.CssText));
+                                description.AppendChild(styleElement);
+                            }
+                        }
+
+                        link.Remove();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error loading external CSS from {href}", href);
+                }
+            }
+        }
+
+        private async Task<IDocument?> GetDocumentUsingScrapeAsync(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return null;
+
+            try
+            {
+                StringBuilder sb = new StringBuilder("http://api.scrape.do/?url=");
+
+                sb.Append(Uri.EscapeDataString(url));
+                sb.Append("&token=");
+                sb.Append(Environment.GetEnvironmentVariable("SCRAPE_DO_API_KEY") 
+                    ?? throw new InvalidOperationException("SCRAPE_DO_API_KEY environment variable is not set."));
+
+                string? content = await _apiService.GetAsync(sb.ToString());
+
+                if (string.IsNullOrEmpty(content))
+                    return null;
+
+                return await GetBrowsingContext().OpenAsync(req => req.Content(content));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error connecting to Scrape.");
+                throw;
+            }
+        }
+
+        private IBrowsingContext GetBrowsingContext()
+        {
+            IConfiguration config = Configuration.Default
+                .With(new HttpClientRequester(_httpClientFactory.CreateClient(nameof(IHtmlManagerService))))
+                .WithJs()
+                .WithDefaultLoader()
+                .WithDefaultCookies();
+
+            return BrowsingContext.New(config);
+        }
+
+        private static void SetSrcFromAttribute(IElement description)
+        {
+            foreach (var img in description.QuerySelectorAll("img"))
+            {
+                string? dataSrc = img.GetAttribute("data-src");
+                if (!string.IsNullOrEmpty(dataSrc))
+                {
+                    img.RemoveAttribute("src");
+                    img.SetAttribute("src", dataSrc);
+                }
+            }
         }
 
         private static void RemoveUnusedStyleClasses(IElement description)
@@ -251,12 +508,12 @@ namespace Application.Services
                             {
                                 var styleRule = (ICssStyleRule)inner;
 
-                                var selectors = styleRule.SelectorText
+                                var selectors = styleRule.SelectorText?
                                     .Split(',')
                                     .Select(s => s.Trim())
                                     .ToList();
 
-                                var keptSelectors = selectors.Where(sel =>
+                                var keptSelectors = selectors?.Where(sel =>
                                 {
                                     var classMatches = ExtractCssClassNames().Matches(sel);
                                     if (classMatches.Count == 0)
@@ -265,7 +522,7 @@ namespace Application.Services
                                                         .Any(m => usedClasses.Contains(m.Groups[1].Value));
                                 }).ToList();
 
-                                if (keptSelectors.Count > 0)
+                                if (keptSelectors?.Count > 0)
                                 {
                                     styleRule.SelectorText = string.Join(", ", keptSelectors);
                                     innerRules.Add(styleRule);
@@ -424,20 +681,24 @@ namespace Application.Services
 
             string externalStyles = service switch
             {
+                ExternalService.Brain => _brainStyles,
+                ExternalService.Foxtrot => _foxtrotStyles,
                 ExternalService.Allo => _alloStyles,
+                ExternalService.Comfy => _comfyStyles,
                 _ => string.Empty
             };
 
-            string styleString = string.Concat(externalStyles, string.Join(' ', styles.Select(style => style.InnerHtml)));
+            string styleString = string.Concat(_baseStyles, externalStyles, string.Join(' ', styles
+                .Select(style => style.InnerHtml)));
 
             foreach (var style in styles)
                 style.Remove();
 
-            var minifiedCss = MinifyHtml(string.Concat("<style>", styleString, "</style>"))
+            string minifiedCss = MinifyHtml(string.Concat("<style>", styleString, "</style>"))
                 .Replace("<style>", string.Empty, StringComparison.OrdinalIgnoreCase)
                 .Replace("</style>", string.Empty, StringComparison.OrdinalIgnoreCase);
 
-            var safeCss = JsonSerializer.Serialize(minifiedCss);
+            string safeCss = JsonSerializer.Serialize(minifiedCss);
 
             string script = $$"""
                 <div style="display: none !important;">

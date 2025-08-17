@@ -17,16 +17,69 @@
 }
 
 <div class="relative flex flex-col items-center justify-center mb-4">
-    <h1 class="text-center m-4 text-2xl">In progress</h1>
+    <h2 class="font-bold leading-snug tracking-normal text-slate-800 dark:text-slate-100 text-2xl lg:text-4xl text-center my-4">
+        @Localizer["DESCRIPTION_THIEF_KEY"]
+        <span class="text-center ml-4 text-xs font-normal text-slate-500 dark:text-slate-200">In progress</span>
+    </h2>
     <form id="descriptionFinder"
             method="post"
             asp-action="FindDescription"
             asp-controller="DescriptionConfigurator"
             class="w-full flex flex-col gap-4 items-center justify-center flex-1 mb-4"
     >
-        <input type="text" name="descriptionUrl" class="border" />
-        <input type="text" name="dirUrl" class="border" />
-
+        <div class="flex flex-col gap-4 items-center justify-center flex-1 min-w-[200px] xl:min-w-[400px]">
+            <div class="w-full">
+                <label for="descriptionUrlId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">@Localizer["Link_TO_RESOURCE_KEY"]</label>
+                <div class="w-full min-w-[200px]">
+                    <input id="descriptionUrlId"
+                           name="descriptionUrl"
+                           type="text"
+                           class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200
+                           rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400
+                           hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow font-montserrat"
+                           placeholder="@Localizer["TYPE_HERE_KEY"]" />
+                </div>
+            </div>
+            <div class="w-full">
+                <label for="dirUrlId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">@Localizer["MEDIA_PATH_IN_SERVER_KEY"]</label>
+                <div class="w-full min-w-[200px]">
+                    <input id="dirUrlId"
+                           name="dirUrl"
+                           type="text"
+                           class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200
+                           rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400
+                           hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow font-montserrat"
+                           placeholder="@Localizer["TYPE_HERE_KEY"]" />
+                </div>
+            </div>
+            <div class="w-full ml-auto mr-auto mb-5">
+                <label for="externalServiceId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">@Localizer["EXTERNAL_SERVICE_KEY"]</label>
+                <div class="relative">
+                    <select id="externalServiceId"
+                            name="externalService"
+                            class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 dark:text-slate-300 text-sm border border-slate-200
+                               dark:border-slate-700 rounded pl-3 pr-8 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-400 shadow-sm
+                               focus:shadow-md appearance-none cursor-pointer">
+                        @if (Model.ExternalServiceOptions != null)
+                        {
+                            @foreach (var item in Model.ExternalServiceOptions)
+                            {
+                                <option value="@item">@item</option>
+                            }
+                        }
+                    </select>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke-width="1.2"
+                         stroke="currentColor"
+                         class="h-5 w-5 ml-1 absolute top-2.5 right-2.5 text-slate-700">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
         @await Component.InvokeAsync("Button", new {
             text = @Localizer["ClEAR_KEY"].Value,
             type = "submit",
@@ -34,23 +87,39 @@
         })
     </form>
 
-    <div class="border border-slate-300 dark:border-slate-600 rounded-sm p-2 shadow-sm w-[80%]">
-        <ul>
-            @foreach (var item in @Model.ExternalImages)
-            {
-                if (!item.Key.EndsWith(".mp4"))
-                {
-                    string rowClass = index % 2 == 0 ? "bg-neutral-50 dark:bg-neutral-900" : string.Empty;
+    <div class="w-full flex flex-col gap-4 items-center justify-center flex-1 mb-4">
+        <div class="max-w-200 w-full">
+            <p class="block text-sm font-medium text-gray-700 dark:text-gray-300 mr-4">@Localizer["MEDIA_RESOURCES_KEY"]</p>
+            <div class="w-full border border-slate-300 dark:border-slate-600 rounded-sm p-2 shadow-sm w-full min-h-9">
+                <ul>
+                    @foreach (var item in @Model.ExternalImages)
+                    {
+                        if (!item.Key.EndsWith(".mp4"))
+                        {
+                            string rowClass = index % 2 == 0 ? "bg-neutral-50 dark:bg-neutral-900" : string.Empty;
 
-                    <li class="flex flex-row items-center rounded-sm border border-slate-400 dark:border-slate-700
-                                           overflow-hidden font-montserrat p-2 mb-2 @rowClass">
-                        <a href="@item.Key" download="@item.Value" target="_blank" class="cursor-pointer line-clamp-1">@item.Key</a>
-                    </li>
+                            <li class="flex flex-row items-center rounded-sm border border-slate-400 dark:border-slate-700
+                                                   overflow-hidden font-montserrat p-2 mb-2 @rowClass">
+                                <a href="@item.Key" download="@item.Value" target="_blank" class="cursor-pointer line-clamp-1">@item.Key</a>
+                            </li>
 
-                    index++;
-                }
-            }
-        </ul>
+                            index++;
+                        }
+                    }
+                </ul>
+            </div>
+        </div>
+        <form id="downloadMediaId"
+              method="post"
+              asp-action="DownloadMedia"
+              asp-controller="DescriptionConfigurator">
+            <input type="text" name="linksArr" hidden value="@Model.DownloadLinks" />
+            @await Component.InvokeAsync("Button", new {
+                text = @Localizer["DOWNLOAD_KEY"].Value,
+                type = "submit",
+                sizeClasses = "py-2 px-16",
+            })
+        </form>
     </div>
 
     <div class="w-full">
@@ -61,7 +130,7 @@
                  class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200
                         rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400
                         hover:border-slate-300 dark:border-slate-200 shadow-sm focus:shadow font-montserrat
-                        resize-none overflow-hidden">
+                        resize-none overflow-hidden contenteditable-area">
                 @Html.Raw(@Model.CleanDescriptionHtml)
             </div>
         </div>

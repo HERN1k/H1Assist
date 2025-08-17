@@ -4,6 +4,8 @@
     {
         EKatalog,
         Brain,
-        Allo
+        Allo,
+        Foxtrot,
+        Comfy
     }
 }

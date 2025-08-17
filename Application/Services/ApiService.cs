@@ -1,5 +1,8 @@
-﻿using System.Text.Json;
+﻿using System.IO;
+using System.Text.Json;
+
 using Application.Interfaces;
+
 using Microsoft.Extensions.Logging;
 
 namespace Application.Services
@@ -44,7 +47,7 @@ namespace Application.Services
                 return value;
             }
 
-            string? result = await GetAsync("E-Katalog", new Uri(url), ct);
+            string? result = await GetAsync(nameof(Application), new Uri(url), ct);
 
             if (result != null)
             {
@@ -58,6 +61,26 @@ namespace Application.Services
             return result;
         }
 
+        public async Task DownloadImagesToDirectoryAsync(List<string> links, string directory, CancellationToken ct = default)
+        {
+            foreach (string link in links)
+            {
+                if (string.IsNullOrWhiteSpace(link))
+                    continue;
+
+                try
+                {
+                    Uri url = new Uri(link);
+
+                    await SaveAsync(nameof(Application), directory, url, ct);
+                }
+                catch (UriFormatException ex)
+                {
+                    m_logger.LogError(ex, "Invalid URL format: {Url}", link);
+                }
+            }
+        }
+
         /// <summary>
         /// Sends an HTTP GET request to the specified URL and attempts to deserialize the response to the specified type.<br/>
         /// Includes retry logic and basic error handling.
@@ -69,7 +92,7 @@ namespace Application.Services
                 return default;
             }
 
-            var http = m_httpFactory.CreateClient(httpClientName);
+            HttpClient http = m_httpFactory.CreateClient(httpClientName);
 
             for (int attempt = 1; attempt <= m_maxRetries; attempt++)
             {
@@ -145,6 +168,71 @@ namespace Application.Services
             }
 
             return default;
+        }
+
+        private async Task SaveAsync(string httpClientName, string directory, Uri url, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(httpClientName) || string.IsNullOrWhiteSpace(directory) || url == null)
+                return;
+
+            Directory.CreateDirectory(directory);
+            HttpClient http = m_httpFactory.CreateClient(httpClientName);
+
+            for (int attempt = 1; attempt <= m_maxRetries; attempt++)
+            {
+                try
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    byte[] res = await http.GetByteArrayAsync(url, ct);
+
+                    if (res == null || res.Length <= 0)
+                    {
+                        m_logger.LogWarning("Empty response content from {Url}", url);
+
+                        return;
+                    }
+
+                    ct.ThrowIfCancellationRequested();
+                    
+                    await File.WriteAllBytesAsync(Path.Combine(directory, Path.GetFileName(url.ToString())), res, ct);
+
+                    return;
+                }
+                catch (TaskCanceledException) when (ct.IsCancellationRequested)
+                {
+                    return;
+                }
+                catch (HttpRequestException ex)
+                {
+                    m_logger.LogWarning(ex, "{ex}", ex.Message);
+
+                    if (attempt == m_maxRetries)
+                    {
+                        return;
+                    }
+
+                    await Task.Delay(m_delayMilliseconds, ct);
+                }
+                catch (ArgumentNullException ex)
+                {
+                    m_logger.LogError(ex, "{ex}", ex.Message);
+
+                    return;
+                }
+                catch (JsonException ex)
+                {
+                    m_logger.LogError(ex, "{ex}", ex.Message);
+
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    m_logger.LogError(ex, "{ex}", ex.Message);
+
+                    return;
+                }
+            }
         }
     }
 }

@@ -132,16 +132,37 @@
   <data name="DESCRIPTION_NOT_FOUND_KEY" xml:space="preserve">
     <value>Description not found</value>
   </data>
+  <data name="DESCRIPTION_THIEF_KEY" xml:space="preserve">
+    <value>Description thief</value>
+  </data>
+  <data name="DOWNLOAD_KEY" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="EXTERNAL_SERVICE_KEY" xml:space="preserve">
+    <value>Online store</value>
+  </data>
   <data name="INVALID_INPUT_DATA_KEY" xml:space="preserve">
     <value>Invalid input data</value>
   </data>
   <data name="INVALID_URL_KEY" xml:space="preserve">
     <value>Invalid directory URL</value>
   </data>
+  <data name="Link_TO_RESOURCE_KEY" xml:space="preserve">
+    <value>Link to resource</value>
+  </data>
+  <data name="MEDIA_PATH_IN_SERVER_KEY" xml:space="preserve">
+    <value>Path to media on server</value>
+  </data>
+  <data name="MEDIA_RESOURCES_KEY" xml:space="preserve">
+    <value>Media resources</value>
+  </data>
   <data name="PAGE_TITLE_DESCRIPTION_CONFIGURATOR_KEY" xml:space="preserve">
     <value>Description configurator</value>
   </data>
   <data name="RESULT_WILL_BE_HERE_KEY" xml:space="preserve">
     <value>Result will be here</value>
+  </data>
+  <data name="TYPE_HERE_KEY" xml:space="preserve">
+    <value>Type here...</value>
   </data>
 </root>

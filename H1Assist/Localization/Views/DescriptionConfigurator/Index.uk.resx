@@ -132,16 +132,37 @@
   <data name="DESCRIPTION_NOT_FOUND_KEY" xml:space="preserve">
     <value>Опис не знайдено</value>
   </data>
+  <data name="DESCRIPTION_THIEF_KEY" xml:space="preserve">
+    <value>Ворішка опису</value>
+  </data>
+  <data name="DOWNLOAD_KEY" xml:space="preserve">
+    <value>Завантажити</value>
+  </data>
+  <data name="EXTERNAL_SERVICE_KEY" xml:space="preserve">
+    <value>Інтернет магазин</value>
+  </data>
   <data name="INVALID_INPUT_DATA_KEY" xml:space="preserve">
     <value>Недійсні вхідні дані</value>
   </data>
   <data name="INVALID_URL_KEY" xml:space="preserve">
     <value>Недійсна URL-адреса каталогу</value>
   </data>
+  <data name="Link_TO_RESOURCE_KEY" xml:space="preserve">
+    <value>Посилання на ресурс</value>
+  </data>
+  <data name="MEDIA_PATH_IN_SERVER_KEY" xml:space="preserve">
+    <value>Шлях до медіа на сервері</value>
+  </data>
+  <data name="MEDIA_RESOURCES_KEY" xml:space="preserve">
+    <value>Медіа ресурси</value>
+  </data>
   <data name="PAGE_TITLE_DESCRIPTION_CONFIGURATOR_KEY" xml:space="preserve">
     <value>Конфігуратор опису</value>
   </data>
   <data name="RESULT_WILL_BE_HERE_KEY" xml:space="preserve">
     <value>Результат буде тут</value>
+  </data>
+  <data name="TYPE_HERE_KEY" xml:space="preserve">
+    <value>Введіть тут...</value>
   </data>
 </root>

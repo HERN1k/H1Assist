@@ -11,6 +11,12 @@
         public static readonly ImageExtension WEBP = new ImageExtension(".webp");
         public static readonly ImageExtension AVIF = new ImageExtension(".avif");
         
+        public const string JPGString = ".jpg";
+        public const string JPEGString = ".jpeg";
+        public const string PNGString = ".png";
+        public const string WEBPString = ".webp";
+        public const string AVIFString = ".avif";
+
         public string Value { get; } = string.Empty;
         public bool HasValue => !string.IsNullOrEmpty(Value);
 

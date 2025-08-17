@@ -1,5 +1,7 @@
 using System.Globalization;
 using Application;
+using Application.Interfaces;
+using Domain.ValueObjects;
 using Infrastructure;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
@@ -26,7 +28,13 @@ namespace H1Assist
             builder.Services.AddApplication();
             builder.Services.AddInfrastructure();
 
-            builder.Services.AddHttpClient("E-Katalog");
+            builder.Services.AddHttpClient(nameof(Application));
+            builder.Services.AddHttpClient(nameof(IHtmlManagerService), client => 
+            {
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36");
+                client.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                client.DefaultRequestHeaders.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue() { NoCache = true };
+            });
 
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
             {
