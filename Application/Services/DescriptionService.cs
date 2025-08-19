@@ -146,23 +146,25 @@ namespace Application.Services
             if (document == null)
                 return null;
 
-            IElement? element = service switch
+            IElement? element = null;
+            if (service.Equals(ExternalService.Comfy))
             {
-                ExternalService.Comfy => 
-                    document.GetElementById("description"),
-
-                ExternalService.Brain =>
-                    document.QuerySelectorAll(".product-additional-description").ElementAtOrDefault(0),
-
-                ExternalService.Foxtrot =>
-                    document.QuerySelectorAll(".product-about").ElementAtOrDefault(0)
-                    ?? document.QuerySelectorAll(".product-about__container-for-content").ElementAtOrDefault(0),
-
-                ExternalService.Allo =>
-                    document.QuerySelectorAll(".p-description__content").ElementAtOrDefault(0)
-                    ?? document.GetElementById("extended-description"),
-                _ => null
-            };
+                element = document.GetElementById("description");
+            }
+            else if (service.Equals(ExternalService.Brain))
+            {
+                element = document.QuerySelectorAll(".product-additional-description").FirstOrDefault();
+            }
+            else if (service.Equals(ExternalService.Foxtrot))
+            {
+                element = document.QuerySelectorAll(".product-about").FirstOrDefault();
+                element ??= document.QuerySelectorAll(".product-about__container-for-content").FirstOrDefault();
+            }
+            else if (service.Equals(ExternalService.Allo))
+            {
+                element = document.QuerySelectorAll(".p-description__content").FirstOrDefault();
+                element ??= document.GetElementById("extended-description");
+            }
 
             return element ?? null;
         }

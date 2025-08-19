@@ -1,0 +1,39 @@
+﻿@font-face {
+    font-family: 'Averta CY';
+    src: url('/fonts/Averta_Cyrillic_ExtraBold.otf') format('opentype');
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Averta CY';
+    src: url('/fonts/Averta_Cyrillic_Bold.otf') format('opentype');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Averta CY';
+    src: url('/fonts/Averta_Cyrillic_SemiBold.otf') format('opentype');
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Averta CY';
+    src: url('/fonts/Averta_Cyrillic_Regular.otf') format('opentype');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Averta CY';
+    src: url('/fonts/Averta_Cyrillic_Light.otf') format('opentype');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}

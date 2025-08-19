@@ -12,11 +12,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] | @Localizer["APP_NAME_KEY"]</title>
     <script type="importmap"></script>
+    <link rel="stylesheet" href="~/css/fonts.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/tailwind.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/H1Assist.styles.css" asp-append-version="true" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" asp-append-version="true" >
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin asp-append-version="true" >
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Mozilla+Text:wght@200..700&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet" asp-append-version="true" >
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Mozilla+Text:wght@200..700&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet" asp-append-version="true" />
 </head>
 <body class="min-h-screen flex flex-col bg-white text-slate-900 dark:bg-gray-900 dark:text-slate-100 
              @(currentCulture.StartsWith("en", StringComparison.InvariantCultureIgnoreCase) ? "font-mozilla" : "font-montserrat")">

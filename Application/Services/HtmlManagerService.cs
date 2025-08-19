@@ -1,5 +1,5 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using System.Data;
+using System.Text;
 using System.Text.RegularExpressions;
 using AngleSharp;
 using AngleSharp.Css.Dom;
@@ -21,28 +21,72 @@ namespace Application.Services
         private readonly IImageEditorService _imageEditor;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<HtmlManagerService> _logger;
-        private readonly ExternalService[] _onlyChromiumOpen = [ ExternalService.Comfy ];
+        private readonly ExternalService[] _onlyScrapeOpen = new ExternalService[1] { ExternalService.Comfy };
         private readonly string _baseEKatalogUrl = "https://ek.ua/";
         private static readonly string[] _propertiesToSave = 
-            [ "margin-top", "margin-bottom", "margin", "font-size", "font-weight", 
+            [ "margin-top", "margin-bottom", "margin", "font-weight", 
             "text-align", "display", "position", "height", "width" ];
+        private const string _baseStylesForDescriptionClean = """
+            <style>
+                ul {
+                    list-style: none;
+                    padding-left: 0;
+                }
+                ul li {
+                    position: relative;
+                    padding-left: 3em;
+                }
+                ul li::before
+                {
+                    background: #019F01;
+                    border-radius: 50%;
+                    content: "";
+                    display: inline-block;
+                    height: 8px;
+                    left: 1.5em;
+                    position: absolute;
+                    top: 6px;
+                    width: 8px;
+                }
+                ol {
+                    counter-reset: list-counter;
+                    list-style: none;
+                    padding-left: 0;
+                }
+                ol li {
+                    counter-increment: list-counter;
+                    position: relative;
+                    padding-left: 2em;
+                    margin-bottom: 0.5em;
+                }
+                ol li::before {
+                    content: counter(list-counter);
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 1.5em;
+                    height: 1.5em;
+                    background-color: #019F01;
+                    color: white;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: 0.9em;
+                }
+            </style>
+            """;
         private const string _baseStyles = """
-            @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
-            .desc * {
-                font-family: 'Montserrat', sans-serif !important;
+            .main-product-description-wrapper {
+                font-family: 'Averta CY', sans-serif, !important;
+                width: 100%; 
+                height: auto;
+                margin: 0 auto; 
+                display: block;
             }
-            @media (max-width: 499px) {
-                .desc * {
-                    width: auto !important;
-                    height: auto !important;
-                    margin auto !important;
-                }
-                .desc img, .desc section {
-                    max-width: 100% !important;
-                }
-            }
-            .contenteditable-area {
-                font-family: 'Montserrat', sans-serif !important;
+            .main-product-description-wrapper * {
+                font-family: 'Averta CY', sans-serif !important;
             }
             """;
         private const string _alloStyles = """
@@ -220,7 +264,7 @@ namespace Application.Services
             }
 
             IDocument? document = null;
-            if (_onlyChromiumOpen.Contains(service))
+            if (_onlyScrapeOpen.Contains(service))
             {
                 document = await GetDocumentUsingScrapeAsync(url);
             } 
@@ -340,12 +384,12 @@ namespace Application.Services
                 CleanEmptyElements(descriptionElement);
                 RemoveUnwantedAttributes(descriptionElement);
                 RemoveUnusedStyleClasses(descriptionElement);
-                RemoveStylesComments(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
+                RemoveStylesComments(descriptionElement, externalMedia, changeURL, newMediaFolderPath); 
                 await CreateVideoPoster(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
                 ProcessMediaURLs(descriptionElement, externalMedia, changeURL, newMediaFolderPath);
                 string resultHtml = MinifyHtml(AddInjectStyleFunction(descriptionElement, service));
 
-                CleanDescriptionHtmlDto result = new CleanDescriptionHtmlDto(resultHtml, externalMedia); ;
+                CleanDescriptionHtmlDto result = new CleanDescriptionHtmlDto(resultHtml, externalMedia);
 
                 if (useCache)
                     _cache.SetValue(cacheKey, result);  
@@ -372,22 +416,54 @@ namespace Application.Services
                 try
                 {
                     string? cssContent = await _apiService.GetAsync(href);
+
+                    Dictionary<string, Dictionary<string, string>> specialProperties = ExtractSpecialProperties(cssContent);
+
                     if (!string.IsNullOrWhiteSpace(cssContent))
                     {
                         ICssStyleSheet styleSheet = new CssParser().ParseStyleSheet(cssContent);
 
                         if (description.Owner != null && styleSheet.Rules.Length > 0)
                         {
-                            IEnumerable<ICssStyleRule> safeRules = styleSheet.Rules
-                                .OfType<ICssStyleRule>()
+                            IElement styleElement = description.Owner.CreateElement("style");
+
+                            IEnumerable<ICssStyleRule> safeRules = styleSheet.Rules.OfType<ICssStyleRule>()
                                 .Where(r => r.SelectorText != "*" && r.SelectorText != "html, body");
+                            IEnumerable<ICssMediaRule> mediaRules = styleSheet.Rules.OfType<ICssMediaRule>();
+                            IEnumerable<ICssRule> otherRules = styleSheet.Rules
+                                .Where(r => r.Type != CssRuleType.Media && r.Type != CssRuleType.Style);
 
                             if (safeRules.Any())
                             {
-                                IElement styleElement = description.Owner.CreateElement("style");
-                                styleElement.TextContent = string.Join("\n", safeRules.Select(r => r.CssText));
-                                description.AppendChild(styleElement);
+                                AddRulesWithSpecialProperties(styleElement, safeRules, specialProperties);
                             }
+
+                            foreach (var mediaRule in mediaRules)
+                            {
+                                IEnumerable<ICssStyleRule> mediaStyleRuless = mediaRule.Rules
+                                    .OfType<ICssStyleRule>()
+                                    .Where(r => r.SelectorText != "*" && r.SelectorText != "html, body");
+
+                                styleElement.TextContent += $"@media {mediaRule.ConditionText} {{\n";
+
+                                AddRulesWithSpecialProperties(styleElement, mediaStyleRuless, specialProperties);
+
+                                styleElement.TextContent += "}\n";
+                            }
+
+                            if (otherRules.Any())
+                            {
+                                StringBuilder sb = new StringBuilder();
+
+                                foreach (var r in otherRules)
+                                {
+                                    sb.AppendLine(r.CssText);
+                                }
+
+                                styleElement.TextContent += sb.ToString();
+                            }
+
+                            description.AppendChild(styleElement);
                         }
 
                         link.Remove();
@@ -398,6 +474,48 @@ namespace Application.Services
                     _logger.LogError(ex, "Error loading external CSS from {href}", href);
                 }
             }
+        }
+
+        private static Dictionary<string, Dictionary<string, string>> ExtractSpecialProperties(string? css)
+        {
+            Dictionary<string, Dictionary<string, string>> result = new Dictionary<string, Dictionary<string, string>>();
+
+            if (string.IsNullOrWhiteSpace(css))
+                return result;
+
+            foreach (Match ruleMatch in RuleRegex().Matches(css))
+            {
+                string selector = ruleMatch.Groups["selector"].Value.Trim();
+                string body = ruleMatch.Groups["body"].Value;
+
+                var properties = new Dictionary<string, string>();
+
+                foreach (Match propMatch in PropRegex().Matches(body))
+                {
+                    string name = propMatch.Groups["name"].Value.Trim();
+                    string value = propMatch.Groups["value"].Value.Trim();
+
+                    if (name.StartsWith("-webkit-") ||
+                        name.StartsWith("-moz-") ||
+                        name.StartsWith("-ms-") ||
+                        name.StartsWith("-o-") ||
+                        name.StartsWith("gap") ||
+                        value.Contains("clamp(") ||
+                        value.Contains("calc(") ||
+                        value.Contains("var(") ||
+                        value.Contains("linear-gradient("))
+                    {
+                        properties[name] = value;
+                    }
+                }
+
+                if (properties.Count > 0)
+                {
+                    result[selector] = properties;
+                }
+            }
+
+            return result;
         }
 
         private async Task<IDocument?> GetDocumentUsingScrapeAsync(string url)
@@ -454,7 +572,7 @@ namespace Application.Services
 
         private static void RemoveUnusedStyleClasses(IElement description)
         {
-            var usedClasses = new HashSet<string>(
+            HashSet<string> usedClasses = new HashSet<string>(
                 description.QuerySelectorAll("*")
                     .SelectMany(e => e.ClassList)
                     .Where(c => !string.IsNullOrWhiteSpace(c))
@@ -463,13 +581,16 @@ namespace Application.Services
             if (usedClasses.Count == 0)
                 return;
 
-            var cssParser = new CssParser();
-
+            CssParser cssParser = new CssParser();
+            
             foreach (var styleEl in description.QuerySelectorAll("style").ToList())
             {
-                var sheet = cssParser.ParseStyleSheet(styleEl.InnerHtml);
+                Dictionary<string, Dictionary<string, string>> specialProperties = ExtractSpecialProperties(styleEl.InnerHtml);
+                ICssStyleSheet sheet = cssParser.ParseStyleSheet(styleEl.InnerHtml);
 
-                var newRules = new List<ICssRule>();
+                styleEl.TextContent = string.Empty;
+
+                List<ICssRule> newRules = new List<ICssRule>();
 
                 foreach (var rule in sheet.Rules)
                 {
@@ -547,11 +668,59 @@ namespace Application.Services
                     }
                 }
 
-                var sb = new StringBuilder();
-                foreach (var r in newRules)
-                    sb.AppendLine(r.CssText);
+                IEnumerable<ICssStyleRule> styleRules = newRules.OfType<ICssStyleRule>();
+                IEnumerable<ICssMediaRule> mediaRules = newRules.OfType<ICssMediaRule>();
+                IEnumerable<ICssRule> otherRules = newRules.Where(r => r.Type != CssRuleType.Style && r.Type != CssRuleType.Media);
 
-                styleEl.TextContent = sb.ToString();
+                AddRulesWithSpecialProperties(styleEl, styleRules, specialProperties);
+
+                foreach (var rule in mediaRules)
+                {
+                    IEnumerable<ICssStyleRule> mediaStyleRules = rule.Rules.OfType<ICssStyleRule>();
+
+                    styleEl.TextContent += $"@media {rule.ConditionText} {{\n";
+
+                    AddRulesWithSpecialProperties(
+                        element: styleEl,
+                        rules: mediaStyleRules,
+                        specialProperties: specialProperties); 
+
+                    styleEl.TextContent += "}\n";
+                }
+
+                StringBuilder sb = new StringBuilder();
+                foreach (var r in otherRules)
+                {
+                    sb.AppendLine(r.CssText);
+                }
+
+                styleEl.TextContent += sb.ToString();
+            }
+        }
+
+        private static void AddRulesWithSpecialProperties(IElement element, IEnumerable<ICssStyleRule> rules, Dictionary<string, Dictionary<string, string>> specialProperties)
+        {
+            foreach (var rule in rules)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append(rule.SelectorText);
+                sb.Append(" { ");
+
+                foreach (var prop in rule.Style)
+                {
+                    sb.Append($"{prop.Name}: {prop.Value}; ");
+                }
+
+                if (specialProperties.TryGetValue(rule.SelectorText, out var specialProps))
+                {
+                    foreach (var specialProp in specialProps)
+                    {
+                        sb.Append($"{specialProp.Key}: {specialProp.Value}; ");
+                    }
+                }
+
+                sb.Append(" }\n");
+                element.TextContent += sb.ToString();
             }
         }
 
@@ -609,7 +778,7 @@ namespace Application.Services
                 img.RemoveAttribute("alt");
                 img.SetAttribute(
                     "style",
-                    (img.GetAttribute("style") ?? string.Empty) + " width: inherit !important; height: inherit !important;"
+                    (img.GetAttribute("style") ?? string.Empty)
                 );
             }
 
@@ -624,7 +793,7 @@ namespace Application.Services
                 video.SetAttribute("muted", string.Empty);
                 video.SetAttribute(
                     "style",
-                    (video.GetAttribute("style") ?? string.Empty) + " width: inherit; height: inherit;"
+                    (video.GetAttribute("style") ?? string.Empty)
                 );
             }
 
@@ -694,25 +863,41 @@ namespace Application.Services
             foreach (var style in styles)
                 style.Remove();
 
-            string minifiedCss = MinifyHtml(string.Concat("<style>", styleString, "</style>"))
-                .Replace("<style>", string.Empty, StringComparison.OrdinalIgnoreCase)
-                .Replace("</style>", string.Empty, StringComparison.OrdinalIgnoreCase);
+            StringBuilder sb = new StringBuilder();
+            
+            sb.AppendLine("<style>");
+            sb.AppendLine(styleString);
+            sb.AppendLine("</style>");
+            sb.AppendLine("<div class=\"main-product-description-wrapper\">");
+            sb.AppendLine(description.InnerHtml);
+            sb.AppendLine("</div>");
 
-            string safeCss = JsonSerializer.Serialize(minifiedCss);
+            string minifiedHtml = MinifyHtml(sb.ToString());
 
-            string script = $$"""
+            return $$"""
+                <isolated-product-description 
+                    style="max-width: 100% !important; width: 100% !important; 
+                           height: auto !important; margin: 0 auto !important; 
+                           display: block !important; overflow: hidden;"
+                ></isolated-product-description>
+
                 <div style="display: none !important;">
                     <script>
-                        (function () {
-                            const style = document.createElement('style');
-                            style.textContent = {{safeCss}};
-                            document.head.appendChild(style);
-                        })();
+                        class ProductDescription extends HTMLElement {
+                            constructor() {
+                                super();
+                                this.attachShadow({ mode: 'open' });
+                            }
+
+                            connectedCallback() {
+                                this.shadowRoot.innerHTML = `{{minifiedHtml}}`;
+                            }
+                        }
+
+                        customElements.define('isolated-product-description', ProductDescription);
                     </script>
                 </div>
                 """;
-
-            return string.Concat(script, description.InnerHtml);
         }
 
         private static void ProcessMediaTag(IElement element, string attrName, Dictionary<string, string> externalList, string? folderPath = "")
@@ -728,15 +913,18 @@ namespace Application.Services
         private static string ReplaceAndTrackUrl(string oldUrl, Dictionary<string, string> externalList, string? folderPath = "")
         {
             string cleanUrl = oldUrl.Split('?')[0];
-            string fileName = Path.GetFileName(cleanUrl);
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(cleanUrl);
+            string fileName = Path.GetFileName(cleanUrl).Replace('_', '-').ToLowerInvariant();
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(cleanUrl).Replace('_', '-').ToLowerInvariant();
 
             externalList.TryAdd(oldUrl, fileName);
 
             if (oldUrl.EndsWith(".mp4", StringComparison.InvariantCultureIgnoreCase))
                 return string.Concat(folderPath?.TrimEnd('/') ?? string.Empty, "/", fileName);
 
-            return string.Concat(folderPath?.TrimEnd('/') ?? string.Empty, "/", fileNameWithoutExtension, ImageExtension.JPG.Value);
+            if (fileName.EndsWith(ImageExtension.PNGString, StringComparison.InvariantCultureIgnoreCase))
+                return string.Concat(folderPath?.TrimEnd('/') ?? string.Empty, "/", fileNameWithoutExtension, ImageExtension.PNG.Value);
+            else
+                return string.Concat(folderPath?.TrimEnd('/') ?? string.Empty, "/", fileNameWithoutExtension, ImageExtension.JPG.Value);
         }
 
         private static void RemoveCommentsRecursive(INode node)
@@ -755,31 +943,31 @@ namespace Application.Services
             }
         }
 
-        private static async Task<string> CleanStylesAsync(string html)
+        private async Task<string> CleanStylesAsync(string html)
         {
-            var config = Configuration.Default.WithCss();
-            var context = BrowsingContext.New(config);
+            IConfiguration config = Configuration.Default.WithCss();
+            IBrowsingContext context = BrowsingContext.New(config);
 
-            var document = await context.OpenAsync(req => req.Content(html));
+            IDocument document = await context.OpenAsync(req => req.Content(html));
 
-            var styledElements = document.All.Where(el => el.HasAttribute("style"));
+            IEnumerable<IElement> styledElements = document.All.Where(el => el.HasAttribute("style"));
 
-            var cssParser = new CssParser();
+            CssParser cssParser = new CssParser();
 
             foreach (var element in styledElements)
             {
-                var styleContent = element.GetAttribute("style");
+                string? styleContent = element.GetAttribute("style");
 
                 if (string.IsNullOrWhiteSpace(styleContent))
                     continue;
 
                 ICssStyleDeclaration styleDeclaration = cssParser.ParseDeclaration(styleContent);
 
-                var allowedStyles = new List<string>();
+                List<string> allowedStyles = new List<string>();
 
                 foreach (var propertyName in _propertiesToSave)
                 {
-                    var value = styleDeclaration.GetPropertyValue(propertyName);
+                    string? value = styleDeclaration.GetPropertyValue(propertyName);
 
                     if (!string.IsNullOrWhiteSpace(value))
                     {
@@ -797,7 +985,7 @@ namespace Application.Services
                 }
             }
 
-            return document?.Body?.InnerHtml ?? string.Empty;
+            return MinifyHtml(string.Concat(_baseStylesForDescriptionClean, document?.Body?.InnerHtml ?? string.Empty));
         }
 
         private static void CleanEKatalogCharacteristicsAttributes(IElement element)
@@ -898,5 +1086,11 @@ namespace Application.Services
 
         [GeneratedRegex(@"\.([a-zA-Z0-9_-]+)")]
         private static partial Regex ExtractCssClassNames();
+
+        [GeneratedRegex(@"(?<selector>[^{]+)\{(?<body>[^}]+)\}")]
+        private static partial Regex RuleRegex();
+
+        [GeneratedRegex(@"(?<name>[-\w]+)\s*:\s*(?<value>([^;{}()]|\([^)]*\))+);?")]
+        private static partial Regex PropRegex();
     }
 }
