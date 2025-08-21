@@ -5,6 +5,7 @@ using AngleSharp;
 using AngleSharp.Css.Dom;
 using AngleSharp.Css.Parser;
 using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
 using AngleSharp.Io.Network;
 using Application.DTOs;
 using Application.Interfaces;
@@ -21,22 +22,39 @@ namespace Application.Services
         private readonly IImageEditorService _imageEditor;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<HtmlManagerService> _logger;
-        private readonly ExternalService[] _onlyScrapeOpen = new ExternalService[1] { ExternalService.Comfy };
+        private readonly ExternalService[] _onlyScrapeOpen = new ExternalService[1] 
+        { 
+            ExternalService.Comfy 
+        };
         private readonly string _baseEKatalogUrl = "https://ek.ua/";
-        private static readonly string[] _propertiesToSave = 
-            [ "margin-top", "margin-bottom", "margin", "font-weight", 
-            "text-align", "display", "position", "height", "width" ];
+        private static readonly string[] _propertiesToSave = new string[9]
+        { 
+            "margin-top", "margin-bottom", "margin", "font-weight",
+            "text-align", "display", "position", "height", "width" 
+        };
+        private static readonly string[] _tagsToSaveForDescriptionClean = new string[23]
+        {
+            "p", "br", "span",
+            "ul", "ol", "li",
+            "strong", "em", "b", "i", "u", "s", "sub", "sup",
+            "h1", "h2", "h3", "h4", "h5", "h6",
+            "div", "section", "article"
+        };
         private const string _baseStylesForDescriptionClean = """
             <style>
-                ul {
+                .main-product-description-wrapper * {
+                    font-family: 'Averta CY', sans-serif !important;
+                }
+                .main-product-description-wrapper ul {
                     list-style: none;
                     padding-left: 0;
                 }
-                ul li {
+                .main-product-description-wrapper ul li {
                     position: relative;
                     padding-left: 3em;
+                    margin-bottom: 15px;
                 }
-                ul li::before
+                .main-product-description-wrapper ul li::before
                 {
                     background: #019F01;
                     border-radius: 50%;
@@ -48,18 +66,18 @@ namespace Application.Services
                     top: 6px;
                     width: 8px;
                 }
-                ol {
+                .main-product-description-wrapper ol {
                     counter-reset: list-counter;
                     list-style: none;
                     padding-left: 0;
                 }
-                ol li {
+                .main-product-description-wrapper ol li {
                     counter-increment: list-counter;
                     position: relative;
                     padding-left: 2em;
-                    margin-bottom: 0.5em;
+                    margin-bottom: 15px;
                 }
-                ol li::before {
+                .main-product-description-wrapper ol li::before {
                     content: counter(list-counter);
                     position: absolute;
                     left: 0;
@@ -79,7 +97,7 @@ namespace Application.Services
             """;
         private const string _baseStyles = """
             .main-product-description-wrapper {
-                font-family: 'Averta CY', sans-serif, !important;
+                font-family: 'Averta CY', sans-serif !important;
                 width: 100%; 
                 height: auto;
                 margin: 0 auto; 
@@ -728,8 +746,18 @@ namespace Application.Services
         {
             HtmlMinifier minifier = new HtmlMinifier(new HtmlMinificationSettings()
             {
+                MinifyInlineCssCode = true,
+                MinifyInlineJsCode = true,
                 MinifyEmbeddedCssCode = true,
-                MinifyEmbeddedJsCode = true
+                MinifyEmbeddedJsCode = true,
+                RemoveOptionalEndTags = false,
+                AttributeQuotesRemovalMode = HtmlAttributeQuotesRemovalMode.KeepQuotes,
+                RemoveHtmlComments = true,
+                RemoveHtmlCommentsFromScriptsAndStyles = true,
+                EmptyTagRenderMode = HtmlEmptyTagRenderMode.Slash,
+                CollapseBooleanAttributes = false,
+                RemoveEmptyAttributes = false,
+                RemoveRedundantAttributes = false
             });
 
             MarkupMinificationResult result = minifier.Minify(html, generateStatistics: false);
@@ -871,7 +899,6 @@ namespace Application.Services
             sb.AppendLine("<div class=\"main-product-description-wrapper\">");
             sb.AppendLine(description.InnerHtml);
             sb.AppendLine("</div>");
-
             string minifiedHtml = MinifyHtml(sb.ToString());
 
             return $$"""
@@ -945,14 +972,39 @@ namespace Application.Services
 
         private async Task<string> CleanStylesAsync(string html)
         {
-            IConfiguration config = Configuration.Default.WithCss();
-            IBrowsingContext context = BrowsingContext.New(config);
+            IDocument document = await BrowsingContext.New(Configuration.Default.WithCss())
+                .OpenAsync(req => req.Content(html));
 
-            IDocument document = await context.OpenAsync(req => req.Content(html));
+            IHtmlElement? body = document.Body;
 
-            IEnumerable<IElement> styledElements = document.All.Where(el => el.HasAttribute("style"));
+            if (body == null)
+            {
+                return string.Empty;
+            }
+
+            foreach (var el in body.QuerySelectorAll("*").ToList())
+            {
+                if (!_tagsToSaveForDescriptionClean.Contains(el.TagName.ToLowerInvariant()))
+                {
+                    el.Remove();
+                }
+
+                foreach (var attr in el.Attributes.ToList())
+                {
+                    if (attr.Name.StartsWith("on", StringComparison.OrdinalIgnoreCase))
+                    {
+                        el.RemoveAttribute(attr.Name);
+                    }
+                }
+            }
+
+            foreach (var el in body.QuerySelectorAll("style, link[rel=stylesheet]").ToList())
+            {
+                el.Remove();
+            }
 
             CssParser cssParser = new CssParser();
+            IEnumerable<IElement> styledElements = body.QuerySelectorAll("*").Where(el => el.HasAttribute("style"));
 
             foreach (var element in styledElements)
             {
@@ -985,7 +1037,16 @@ namespace Application.Services
                 }
             }
 
-            return MinifyHtml(string.Concat(_baseStylesForDescriptionClean, document?.Body?.InnerHtml ?? string.Empty));
+            RemoveCommentsRecursive(body);
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine(_baseStylesForDescriptionClean);
+            sb.AppendLine("<div class=\"main-product-description-wrapper\">");
+            sb.AppendLine(body.InnerHtml);
+            sb.AppendLine("</div>");
+
+            return MinifyHtml(sb.ToString());
         }
 
         private static void CleanEKatalogCharacteristicsAttributes(IElement element)
