@@ -1,8 +1,5 @@
-﻿using System.IO;
-using System.Text.Json;
-
+﻿using System.Text.Json;
 using Application.Interfaces;
-
 using Microsoft.Extensions.Logging;
 
 namespace Application.Services
@@ -48,6 +45,32 @@ namespace Application.Services
             }
 
             string? result = await GetAsync(nameof(Application), new Uri(url), ct);
+
+            if (result != null)
+            {
+                m_cache.SetValue(url, result);
+            }
+            else
+            {
+                m_logger.LogWarning("Failed to retrieve data from {Url}", url);
+            }
+
+            return result;
+        }
+
+        public async Task<string?> GetAsync(string httpClientName, string url, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return default;
+            }
+
+            if (m_cache.TryGetValue(url, out string? value))
+            {
+                return value;
+            }
+
+            string? result = await GetAsync(httpClientName, new Uri(url), ct);
 
             if (result != null)
             {

@@ -1,8 +1,13 @@
 using System.Globalization;
+
 using Application;
 using Application.Interfaces;
+using Application.Services;
+
 using Domain.ValueObjects;
+
 using Infrastructure;
+
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
@@ -34,6 +39,12 @@ namespace H1Assist
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36");
                 client.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                 client.DefaultRequestHeaders.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue() { NoCache = true };
+            });
+            builder.Services.AddHttpClient(nameof(IIcecatService), client =>
+            {
+                // TEMP
+                client.DefaultRequestHeaders.Add("api_token", "dfca579f-e43c-4120-a247-c324373f85c4");
+                client.DefaultRequestHeaders.Add("content_token", "5baebb25-2f4d-4321-a515-f4218bbfc0d5");
             });
 
             builder.Services.Configure<ForwardedHeadersOptions>(options =>

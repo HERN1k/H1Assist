@@ -144,6 +144,15 @@ namespace H1Assist.Controllers
             return View(nameof(Index), model);
         }
 
+        [HttpPost]
+        [ActionName("GenerateIcecatDescription")]
+        public async Task<IActionResult> GenerateIcecatDescriptionAsync()
+        {
+            Dictionary<Language, string> result = await _description.GenerateIcecatDescriptionAsync("Sony", "CFI-1015A");
+
+            return Json(result);
+        }
+
         private static DescriptionConfiguratorViewModel CreateModel()
         {
             DescriptionConfiguratorViewModel model = new DescriptionConfiguratorViewModel();

@@ -14,6 +14,7 @@ namespace Application
             services.AddSingleton<ICacheService, CacheService>();
             services.AddScoped<IApiService, ApiService>();
             services.AddScoped<IHtmlManagerService, HtmlManagerService>();
+            services.AddScoped<IIcecatService, IcecatService>();
 
             return services;
         }

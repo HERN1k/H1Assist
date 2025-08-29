@@ -136,6 +136,75 @@ namespace Application.Services
             }
         }
 
+        public async Task<Dictionary<Language, string>> GenerateIcecatDescriptionAsync(string brand, string productCode)
+        {
+            Dictionary<Language, string> result = new() { { Language.UA, string.Empty }, { Language.RU, string.Empty } };
+
+            if (string.IsNullOrEmpty(productCode))
+                return result;
+
+            string? res = await _api.GetAsync(nameof(IIcecatService), $"https://live.icecat.biz/api?lang=EN&shopname=HERN1k&ProductCode={productCode}&Brand={brand}&content=");
+            
+            if (string.IsNullOrEmpty(res)) 
+                return result;
+
+            Domain.DTO.IcecatJson? json = Domain.DTO.Icecat.Deserialize(res);
+
+            if (json == null)
+                return result;
+
+            string x = $$"""
+                <style>
+                    .product-description {
+                        max - width: 800px;
+                        margin: 2rem auto;
+                        font-family: system-ui, sans-serif;
+                        line-height: 1.6;
+                    }
+
+                    .product-title {
+                        font - size: 1.5rem;
+                        margin-bottom: 1rem;
+                    }
+
+                    .product-gallery {
+                        display: flex;
+                        gap: 1rem;
+                        margin-bottom: 1.5rem;
+                    }
+
+                    .product-gallery img {
+                        max - width: 200px;
+                          border-radius: 8px;
+                          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                    }
+
+                    .product-long-description p {
+                        font - size: 1rem;
+                    }
+                </style>
+                <div class="product-description">
+                    <h2 class="product-title">{{json.Data.GeneralInfo.Title}}</h2>
+
+                    <div class="product-gallery">
+                        {{string.Join('\n', json.Data.Gallery.Select(img => $"<img src='{img.Pic}' alt='{img.Type}' />"))}}
+                    </div>
+
+                    <div class="product-long-description">
+                        <p>{{json.Data.GeneralInfo.Description.LongDesc}}</p>
+                    </div>
+                </div>
+                """;
+
+            x = x.Replace("\r", string.Empty);
+            x = x.Replace("\n", string.Empty);
+
+            result.Remove(Language.UA);
+            result.Add(Language.UA, x);
+
+            return result;
+        }
+
         private async Task<IElement?> GetDescriptionHtmlAsync(string url, ExternalService service, bool useCache = true)
         {
             if (string.IsNullOrWhiteSpace(url))

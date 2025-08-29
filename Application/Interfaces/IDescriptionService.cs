@@ -8,5 +8,6 @@ namespace Application.Interfaces
         Task<List<ProductCharacteristic>> GenerateCharacteristicsAsync(string productName, Language language);
         Task<CleanDescriptionHtmlDto?> CleanHtmlAsync(string descriptionUrl, ExternalService service, string? dirUrl = "", bool useCache = true);
         Task<byte[]> DownloadMediaAsync(string[] media, Dictionary<string, string> base64Media);
+        Task<Dictionary<Language, string>> GenerateIcecatDescriptionAsync(string brand, string productCode);
     }
 }
